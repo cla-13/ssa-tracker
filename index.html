@@ -1,31 +1,88 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SSA Projects | Team Tracker</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--navy:#17324d;--blue:#2563eb;--sky:#eff6ff;--teal:#0f766e;--ink:#203040;--muted:#64748b;--line:#e2e8f0;--bg:#f6f8fb;--white:#fff;--green:#15803d;--amber:#a16207;--red:#b91c1c}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:9px;padding:10px 14px;background:var(--blue);color:white;font-weight:650}button.secondary{background:white;color:var(--navy);border:1px solid var(--line)}button.ghost{background:transparent;color:var(--muted);padding:6px}.top{background:var(--navy);color:white;padding:18px max(20px,calc((100vw - 1180px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-weight:750;font-size:20px}.brand small{display:block;font-size:12px;font-weight:450;opacity:.76}.wrap{max-width:1180px;margin:28px auto;padding:0 20px}.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.bar h1{font-size:27px;line-height:1.2;margin:0 0 4px;color:var(--navy)}.muted{color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}.card,.panel{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 2px 6px #0f172a08}.card label{font-size:13px;color:var(--muted)}.value{font-size:27px;font-weight:750;color:var(--navy);margin-top:2px}.filters{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.filters input,.filters select{max-width:230px}.field{width:100%;border:1px solid #cbd5e1;background:white;border-radius:8px;padding:10px 11px;color:var(--ink)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:760px}.table th,.table td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}.table th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.table tr:last-child td{border-bottom:0}.name{font-weight:700;color:var(--navy)}.sub{font-size:12px;color:var(--muted)}.badge{border-radius:999px;padding:4px 9px;font-size:12px;font-weight:650;white-space:nowrap;background:#f1f5f9}.badge.completed{background:#dcfce7;color:var(--green)}.badge.in-progress{background:#dbeafe;color:#1d4ed8}.badge.planned{background:#fef3c7;color:var(--amber)}.badge.team{background:#e0f2fe;color:#0369a1}.badge.individual{background:#f3e8ff;color:#7e22ce}.notice{padding:11px 13px;border-radius:9px;background:var(--sky);color:#1e40af;font-size:13px}.empty{text-align:center;padding:42px 15px;color:var(--muted)}.modal-bg{position:fixed;inset:0;background:#0f172a88;display:none;align-items:center;justify-content:center;padding:18px;z-index:3}.modal{background:white;border-radius:15px;width:min(580px,100%);max-height:92vh;overflow:auto;padding:22px}.modal h2{margin:0 0 16px;color:var(--navy)}.formrow{margin:12px 0}.formrow label{display:block;font-size:13px;font-weight:650;margin:0 0 5px}.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}.hidden{display:none!important}.pill{display:inline-flex;align-items:center;gap:6px}.dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.dot.live{background:#22c55e;box-shadow:0 0 0 3px #22c55e20}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#17324d;color:white;padding:11px 16px;border-radius:9px;display:none;z-index:9}.login{max-width:450px;margin:8vh auto}.login h1{color:var(--navy)}.right{display:flex;gap:8px;align-items:center}.section-head{display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px}.section-head h2{font-size:18px;margin:0;color:var(--navy)}.log-list{max-height:300px;overflow:auto}.log-item{padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}.log-item:last-child{border:0}@media(max-width:700px){.top{padding:15px 16px}.wrap{padding:0 14px;margin:18px auto}.bar{align-items:flex-start}.bar h1{font-size:23px}.cards{gap:8px}.card{padding:12px}.value{font-size:22px}.grid{grid-template-columns:1fr}.table th,.table td{padding:10px 7px}.right .muted{display:none}}
-</style>
-</head>
-<body>
-<header class="top"><div class="brand">SSA Projects<small>Special Projects Team Tracker</small></div><div id="userBox" class="right hidden"><span class="muted" id="userLabel" style="color:#dbeafe"></span><button class="secondary" id="logoutBtn">Sign out</button></div></header>
-<main class="wrap">
-<section id="setup" class="login panel hidden"><h1>Connect your team tracker</h1><p class="muted">Enter the Supabase project URL and public anon key your administrator configured. These are public client settings; never enter a service role key here.</p><div class="formrow"><label>Project URL</label><input id="urlInput" class="field" placeholder="https://your-project.supabase.co"></div><div class="formrow"><label>Public anon key</label><input id="keyInput" class="field" placeholder="eyJ…" autocomplete="off"></div><button id="saveConfig">Save and continue</button></section>
-<section id="login" class="login panel hidden"><h1>Sign in to SSA Projects</h1><p class="muted">Use your team email. We’ll email you a secure sign-in link.</p><div class="formrow"><label>Work email</label><input id="emailInput" class="field" type="email" placeholder="you@company.com"></div><button id="sendLink">Send sign-in link</button><p class="sub" id="loginMsg"></p></section>
-<section id="app" class="hidden">
-<div class="bar"><div><h1>Project tracker</h1><div class="muted">Track team and individual projects, with hours logged by each person.</div></div><div class="right"><span class="pill sub"><i class="dot" id="liveDot"></i><span id="liveLabel">Connecting…</span></span><button id="addProject">＋ New project</button></div></div>
-<div id="message" class="notice hidden"></div>
-<div class="cards"><div class="card"><label>Projects this year</label><div class="value" id="countStat">0</div></div><div class="card"><label>Approx. hours logged</label><div class="value" id="hoursStat">0</div></div><div class="card"><label>Completed</label><div class="value" id="doneStat">0</div></div></div>
-<div class="filters"><select class="field" id="yearFilter" aria-label="Filter by year"></select><select class="field" id="scopeFilter" aria-label="Filter by project type"><option value="all">All project types</option><option value="team">Team projects</option><option value="individual">Individual projects</option></select><select class="field" id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option>Planned</option><option>In progress</option><option>Completed</option></select><input class="field" id="search" placeholder="Search projects…"></div>
-<div class="panel table-wrap"><table class="table"><thead><tr><th>Project</th><th>Type / owner</th><th>Status</th><th>Target hours</th><th>Logged hours</th><th>Due date</th><th>Actions</th></tr></thead><tbody id="projectRows"></tbody></table><div id="emptyState" class="empty hidden">No projects match these filters yet.<br>Start by adding a project.</div></div>
-<div class="section-head"><h2>Recent time entries</h2><span class="sub">Live updates are on while this page is open.</span></div><div class="panel log-list" id="recentLogs"></div>
-</section>
-</main>
-<div id="projectModal" class="modal-bg"><div class="modal"><h2 id="projectTitle">New project</h2><form id="projectForm"><input type="hidden" id="projectId"><div class="formrow"><label>Project name</label><input required maxlength="120" class="field" id="pName"></div><div class="grid"><div class="formrow"><label>Project type</label><select class="field" id="pScope"><option value="team">Team project</option><option value="individual">Individual project</option></select></div><div class="formrow" id="ownerRow"><label>Individual owner</label><input class="field" id="pOwner" placeholder="Name"></div></div><div class="grid"><div class="formrow"><label>Status</label><select class="field" id="pStatus"><option>Planned</option><option>In progress</option><option>Completed</option></select></div><div class="formrow"><label>Year</label><input class="field" type="number" id="pYear" min="2000" max="2100" required></div></div><div class="grid"><div class="formrow"><label>Approximate target hours (optional)</label><input class="field" type="number" id="pTarget" min="0" step="0.25" placeholder="e.g. 12"></div><div class="formrow"><label>Due date (optional)</label><input class="field" type="date" id="pDue"></div></div><div class="formrow"><label>Notes (optional)</label><textarea class="field" id="pNotes" rows="3" maxlength="1200"></textarea></div><div class="form-actions"><button type="button" class="secondary" data-close>Cancel</button><button type="submit">Save project</button></div></form></div></div>
-<div id="timeModal" class="modal-bg"><div class="modal"><h2>Log time</h2><form id="timeForm"><input id="tProject" type="hidden"><div class="formrow"><label>Project</label><div id="tProjectName" class="name"></div></div><div class="grid"><div class="formrow"><label>Hours</label><input required class="field" id="tHours" type="number" min="0.01" max="1000" step="0.01" placeholder="1.5"></div><div class="formrow"><label>Date worked</label><input required class="field" id="tDate" type="date"></div></div><div class="formrow"><label>What did you work on? (optional)</label><textarea class="field" id="tNote" maxlength="500" rows="3"></textarea></div><div class="form-actions"><button type="button" class="secondary" data-close>Cancel</button><button type="submit">Add time entry</button></div></form></div></div>
-<div id="detailModal" class="modal-bg"><div class="modal"><h2 id="dTitle"></h2><div id="dContent"></div><div class="form-actions"><button class="secondary" data-close>Close</button></div></div></div><div class="toast" id="toast"></div>
-<script>
-(()=>{const $=s=>document.querySelector(s),today=new Date().toISOString().slice(0,10),yearNow=new Date().getFullYear();let supa=null,projects=[],logs=[],user=null,channel=null;const cfg=()=>({url:localStorage.getItem('ssa_supabase_url'),key:localStorage.getItem('ssa_supabase_key')});function show(id){['setup','login','app'].forEach(x=>$('#'+x).classList.add('hidden'));$('#'+id).classList.remove('hidden')}function toast(t){const el=$('#toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2800)}function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function dateFmt(v){return v?new Date(v+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'—'}function hfmt(n){return (Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:2})}async function boot(){const c=cfg();if(!c.url||!c.key){show('setup');return}supa=window.supabase.createClient(c.url,c.key);const {data:{session}}=await supa.auth.getSession();if(session){user=session.user;await startApp()}else show('login');supa.auth.onAuthStateChange(async(_,session)=>{if(session){user=session.user;await startApp()}else{user=null;show('login')}})}$('#saveConfig').onclick=()=>{const u=$('#urlInput').value.trim(),k=$('#keyInput').value.trim();if(!u.startsWith('https://')||!k){toast('Enter a valid project URL and public key.');return}localStorage.setItem('ssa_supabase_url',u);localStorage.setItem('ssa_supabase_key',k);boot()};$('#sendLink').onclick=async()=>{const email=$('#emailInput').value.trim();if(!email)return;$('#loginMsg').textContent='Sending sign-in link…';const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}});$('#loginMsg').textContent=error?error.message:'Check your email for the sign-in link. Only approved team emails can access tracker data.'};$('#logoutBtn').onclick=()=>supa.auth.signOut();$('#scopeFilter').onchange=render;$('#statusFilter').onchange=render;$('#yearFilter').onchange=render;$('#search').oninput=render;function totals(){const map={};logs.forEach(l=>map[l.project_id]=(map[l.project_id]||0)+Number(l.hours));return map}async function startApp(){show('app');$('#userLabel').textContent=user.user_metadata?.full_name||user.email;const yf=$('#yearFilter');yf.innerHTML='<option value="all">All years</option>'+Array.from({length:8},(_,i)=>yearNow-3+i).map(y=>`<option ${y===yearNow?'selected':''}>${y}</option>`).join('');await loadAll();subscribe()}async function loadAll(){const [p,l]=await Promise.all([supa.from('ssa_projects').select('*').order('updated_at',{ascending:false}),supa.from('ssa_time_entries').select('*, ssa_projects(name)').order('work_date',{ascending:false})]);if(p.error||l.error){$('#message').textContent=(p.error||l.error).message;$('#message').classList.remove('hidden');return}projects=p.data||[];logs=l.data||[];$('#message').classList.add('hidden');render()}function subscribe(){if(channel)supa.removeChannel(channel);channel=supa.channel('ssa-live-tracker').on('postgres_changes',{event:'*',schema:'public',table:'ssa_projects'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ssa_time_entries'},loadAll).subscribe(status=>{const live=status==='SUBSCRIBED';$('#liveDot').classList.toggle('live',live);$('#liveLabel').textContent=live?'Live updates on':'Reconnecting…'})}function render(){const sum=totals(),year=$('#yearFilter').value,scope=$('#scopeFilter').value,status=$('#statusFilter').value.toLowerCase(),q=$('#search').value.toLowerCase();let rows=projects.filter(p=>(year==='all'||String(p.project_year)===year)&&(scope==='all'||p.scope===scope)&&(status==='all'||p.status.toLowerCase()===status)&&(!q||(p.name+' '+(p.owner_name||'')+' '+(p.notes||'')).toLowerCase().includes(q)));$('#countStat').textContent=rows.length;$('#hoursStat').textContent=hfmt(Object.values(sum).reduce((a,b)=>a+b,0));$('#doneStat').textContent=rows.filter(p=>p.status==='Completed').length;$('#emptyState').classList.toggle('hidden',rows.length>0);$('#projectRows').innerHTML=rows.map(p=>`<tr><td><div class="name">${esc(p.name)}</div>${p.notes?`<div class="sub">${esc(p.notes).slice(0,105)}${p.notes.length>105?'…':''}</div>`:''}</td><td><span class="badge ${p.scope}">${p.scope==='team'?'Team':'Individual'}</span>${p.owner_name?`<div class="sub">${esc(p.owner_name)}</div>`:''}</td><td><span class="badge ${p.status.toLowerCase().replace(' ','-')}">${esc(p.status)}</span></td><td>${p.target_hours==null?'—':hfmt(p.target_hours)}</td><td><b>${hfmt(sum[p.id]||0)}</b></td><td>${dateFmt(p.due_date)}</td><td><div class="right"><button class="secondary" data-log="${p.id}">＋ Time</button><button class="ghost" title="Details" data-detail="${p.id}">•••</button></div></td></tr>`).join('');document.querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>openTime(b.dataset.log));document.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>detail(b.dataset.detail));$('#recentLogs').innerHTML=logs.slice(0,12).map(l=>`<div class="log-item"><div><b>${esc(l.ssa_projects?.name||'Project')}</b><div class="sub">${dateFmt(l.work_date)} · ${esc(l.display_name||'Team member')}${l.note?' · '+esc(l.note):''}</div></div><b>${hfmt(l.hours)} h</b></div>`).join('')||'<div class="empty">No time entries yet.</div>'}$('#addProject').onclick=()=>openProject();$('#pScope').onchange=()=>$('#ownerRow').classList.toggle('hidden',$('#pScope').value==='team');function openProject(p=null){$('#projectForm').reset();$('#projectId').value=p?.id||'';$('#projectTitle').textContent=p?'Edit project':'New project';$('#pName').value=p?.name||'';$('#pScope').value=p?.scope||'team';$('#pOwner').value=p?.owner_name||'';$('#pStatus').value=p?.status||'Planned';$('#pYear').value=p?.project_year||yearNow;$('#pTarget').value=p?.target_hours??'';$('#pDue').value=p?.due_date||'';$('#pNotes').value=p?.notes||'';$('#ownerRow').classList.toggle('hidden',$('#pScope').value==='team');$('#projectModal').style.display='flex'}$('#projectForm').onsubmit=async e=>{e.preventDefault();const id=$('#projectId').value;const obj={name:$('#pName').value.trim(),scope:$('#pScope').value,owner_name:$('#pScope').value==='individual'?$('#pOwner').value.trim():null,status:$('#pStatus').value,project_year:Number($('#pYear').value),target_hours:$('#pTarget').value?Number($('#pTarget').value):null,due_date:$('#pDue').value||null,notes:$('#pNotes').value.trim()||null};const {error}=id?await supa.from('ssa_projects').update(obj).eq('id',id):await supa.from('ssa_projects').insert(obj);if(error){toast(error.message);return}$('#projectModal').style.display='none';toast(id?'Project updated':'Project added');await loadAll()};function openTime(id){const p=projects.find(x=>x.id===id);if(!p)return;$('#tProject').value=id;$('#tProjectName').textContent=p.name;$('#tHours').value='';$('#tDate').value=today;$('#tNote').value='';$('#timeModal').style.display='flex'}$('#timeForm').onsubmit=async e=>{e.preventDefault();const obj={project_id:$('#tProject').value,user_id:user.id,display_name:user.user_metadata?.full_name||user.email,work_date:$('#tDate').value,hours:Number($('#tHours').value),note:$('#tNote').value.trim()||null};const {error}=await supa.from('ssa_time_entries').insert(obj);if(error){toast(error.message);return}$('#timeModal').style.display='none';toast('Time entry added');await loadAll()};function detail(id){const p=projects.find(x=>x.id===id),ts=logs.filter(l=>l.project_id===id),tot=ts.reduce((s,x)=>s+Number(x.hours),0);$('#dTitle').textContent=p.name;$('#dContent').innerHTML=`<p><span class="badge ${p.scope}">${p.scope==='team'?'Team project':'Individual project'}</span> <span class="badge ${p.status.toLowerCase().replace(' ','-')}">${esc(p.status)}</span></p><p class="muted">${esc(p.notes||'No notes added.')}</p><p><b>${hfmt(tot)} hours logged</b>${p.target_hours!=null?' · '+hfmt(p.target_hours)+' target':''}</p><div class="section-head"><h2>Time log</h2><button data-detail-log>＋ Log time</button></div><div class="log-list">${ts.map(l=>`<div class="log-item"><div><b>${hfmt(l.hours)} h</b><div class="sub">${dateFmt(l.work_date)} · ${esc(l.display_name||'Team member')}${l.note?' · '+esc(l.note):''}</div></div></div>`).join('')||'<p class="muted">No time recorded yet.</p>'}</div><div class="form-actions"><button class="secondary" data-edit>Edit project</button></div>`;$('#detailModal').style.display='flex';$('#dContent [data-detail-log]').onclick=()=>{closeModals();openTime(id)};$('#dContent [data-edit]').onclick=()=>{closeModals();openProject(p)}}function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.style.display='none')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModals);document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals()}));boot()})();
-</script>
-</body></html>
+-- SSA Projects Tracker Database Schema
+-- Run this in Supabase SQL Editor
+
+-- Create team members table
+create table if not exists public.ssa_team_members (
+  id bigserial primary key,
+  email text unique not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ssa_team_members enable row level security;
+
+create policy "Team members can view all members"
+  on public.ssa_team_members for select
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+-- Create projects table
+create table if not exists public.ssa_projects (
+  id bigserial primary key,
+  name text not null,
+  project_type text default 'Team',
+  owner text,
+  status text default 'Planned',
+  target_hours integer,
+  due_date date,
+  notes text,
+  year integer default 2026,
+  created_by text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ssa_projects enable row level security;
+
+create policy "Approved team members can view projects"
+  on public.ssa_projects for select
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+create policy "Approved team members can create projects"
+  on public.ssa_projects for insert
+  with check (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+create policy "Team members can update projects"
+  on public.ssa_projects for update
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+-- Create time entries table
+create table if not exists public.ssa_time_entries (
+  id bigserial primary key,
+  project_id bigint references public.ssa_projects(id) on delete cascade,
+  hours decimal(5,2) not null,
+  date_worked date not null,
+  notes text,
+  logged_by text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ssa_time_entries enable row level security;
+
+create policy "Approved team can view time entries"
+  on public.ssa_time_entries for select
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+create policy "Users can create own time entries"
+  on public.ssa_time_entries for insert
+  with check (auth.jwt() ->> 'email' in (select email from public.ssa_team_members)
+    and logged_by = (auth.jwt() ->> 'email'));
+
+create policy "Users can update own time entries"
+  on public.ssa_time_entries for update
+  using (auth.jwt() ->> 'email' = logged_by);
+
+create policy "Users can delete own time entries"
+  on public.ssa_time_entries for delete
+  using (auth.jwt() ->> 'email' = logged_by);
+
+-- Create indexes for performance
+create index if not exists idx_projects_year on public.ssa_projects(year);
+create index if not exists idx_projects_status on public.ssa_projects(status);
+create index if not exists idx_time_entries_project on public.ssa_time_entries(project_id);
+create index if not exists idx_time_entries_logged_by on public.ssa_time_entries(logged_by);
+
+-- Insert approved team members (IMPORTANT: Replace with your actual company emails - lowercase)
+insert into public.ssa_team_members(email) values
+  ('c.damian@elsevier.com'),
+  ('e.gatan@elsevier.com')
+on conflict (email) do nothing;
