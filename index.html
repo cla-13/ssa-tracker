@@ -1,88 +1,1334 @@
--- SSA Projects Tracker Database Schema
--- Run this in Supabase SQL Editor
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
--- Create team members table
-create table if not exists public.ssa_team_members (
-  id bigserial primary key,
-  email text unique not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
 
-alter table public.ssa_team_members enable row level security;
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-create policy "Team members can view all members"
-  on public.ssa_team_members for select
-  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+    /* Header */
+    header {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
 
--- Create projects table
-create table if not exists public.ssa_projects (
-  id bigserial primary key,
-  name text not null,
-  project_type text default 'Team',
-  owner text,
-  status text default 'Planned',
-  target_hours integer,
-  due_date date,
-  notes text,
-  year integer default 2026,
-  created_by text not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+    header h1 {
+      font-size: 24px;
+      color: #333;
+    }
 
-alter table public.ssa_projects enable row level security;
+    .header-right {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
 
-create policy "Approved team members can view projects"
-  on public.ssa_projects for select
-  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #f0f0f0;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+    }
 
-create policy "Approved team members can create projects"
-  on public.ssa_projects for insert
-  with check (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+    .live-indicator.connected {
+      background: #d4edda;
+      color: #155724;
+    }
 
-create policy "Team members can update projects"
-  on public.ssa_projects for update
-  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #999;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
 
--- Create time entries table
-create table if not exists public.ssa_time_entries (
-  id bigserial primary key,
-  project_id bigint references public.ssa_projects(id) on delete cascade,
-  hours decimal(5,2) not null,
-  date_worked date not null,
-  notes text,
-  logged_by text not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+    .live-indicator.connected .live-dot {
+      background: #28a745;
+    }
 
-alter table public.ssa_time_entries enable row level security;
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
 
-create policy "Approved team can view time entries"
-  on public.ssa_time_entries for select
-  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+    .user-info {
+      font-size: 14px;
+      color: #666;
+    }
 
-create policy "Users can create own time entries"
-  on public.ssa_time_entries for insert
-  with check (auth.jwt() ->> 'email' in (select email from public.ssa_team_members)
-    and logged_by = (auth.jwt() ->> 'email'));
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #667eea;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
 
-create policy "Users can update own time entries"
-  on public.ssa_time_entries for update
-  using (auth.jwt() ->> 'email' = logged_by);
+    button:hover {
+      background: #5568d3;
+    }
 
-create policy "Users can delete own time entries"
-  on public.ssa_time_entries for delete
-  using (auth.jwt() ->> 'email' = logged_by);
+    button.secondary {
+      background: #6c757d;
+    }
 
--- Create indexes for performance
-create index if not exists idx_projects_year on public.ssa_projects(year);
-create index if not exists idx_projects_status on public.ssa_projects(status);
-create index if not exists idx_time_entries_project on public.ssa_time_entries(project_id);
-create index if not exists idx_time_entries_logged_by on public.ssa_time_entries(logged_by);
+    button.secondary:hover {
+      background: #5a6268;
+    }
 
--- Insert approved team members (IMPORTANT: Replace with your actual company emails - lowercase)
-insert into public.ssa_team_members(email) values
-  ('c.damian@elsevier.com'),
-  ('e.gatan@elsevier.com')
-on conflict (email) do nothing;
+    button.danger {
+      background: #dc3545;
+    }
+
+    button.danger:hover {
+      background: #c82333;
+    }
+
+    /* Auth Section */
+    .auth-screen {
+      background: white;
+      border-radius: 8px;
+      padding: 40px;
+      max-width: 400px;
+      margin: 40px auto;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .auth-screen h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .auth-screen input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .auth-section {
+      margin-bottom: 30px;
+    }
+
+    .auth-section h3 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .auth-message {
+      padding: 15px;
+      background: #e7f3ff;
+      border-radius: 4px;
+      color: #0066cc;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+
+    .auth-message.error {
+      background: #ffe7e7;
+      color: #cc0000;
+    }
+
+    /* Filters and Controls */
+    .controls {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .control-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .control-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    select, input[type="text"] {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* Dashboard Stats */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .stat-card .number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .stat-card .label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Projects Grid */
+    .projects-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .project-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: box-shadow 0.2s;
+    }
+
+    .project-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .project-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge.team { background: #e3f2fd; color: #1976d2; }
+    .badge.individual { background: #fce4ec; color: #c2185b; }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-badge.planned { background: #fff3cd; color: #856404; }
+    .status-badge.in-progress { background: #cfe2ff; color: #084298; }
+    .status-badge.completed { background: #d1e7dd; color: #0f5132; }
+
+    .project-meta {
+      font-size: 13px;
+      color: #666;
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+
+    .project-meta strong { color: #333; }
+
+    .project-progress {
+      margin: 12px 0;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: #eee;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #667eea;
+      transition: width 0.3s;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .project-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .project-actions button {
+      flex: 1;
+      padding: 8px;
+      font-size: 12px;
+    }
+
+    .project-actions button.secondary {
+      background: #6c757d;
+    }
+
+    .time-entries {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+
+    .time-entry {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+
+    .time-entry strong { color: #333; }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .modal-footer button {
+      min-width: 100px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .control-group {
+        flex-direction: column;
+      }
+
+      .search-box {
+        min-width: auto;
+      }
+
+      .projects-container {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .hidden { display: none; }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Auth Screen -->
+    <div id="authScreen" class="auth-screen">
+      <h2>Project Tracker</h2>
+
+      <div class="auth-section">
+        <h3>Supabase Connection</h3>
+        <input
+          type="text"
+          id="projectUrl"
+          placeholder="https://your-project.supabase.co"
+          autocomplete="off"
+        >
+        <input
+          type="password"
+          id="anonKey"
+          placeholder="Your anon public key"
+          autocomplete="off"
+        >
+        <button onclick="saveCredentials()">Connect</button>
+      </div>
+
+      <div id="authMessage"></div>
+
+      <div class="auth-section">
+        <h3>Sign In</h3>
+        <input
+          type="email"
+          id="loginEmail"
+          placeholder="your.email@company.com"
+          autocomplete="email"
+        >
+        <button onclick="sendMagicLink()">Send Magic Link</button>
+        <p id="magicLinkMsg" style="font-size: 12px; color: #666; margin-top: 10px;"></p>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+      <!-- Header -->
+      <header>
+        <h1>📊 Project Tracker</h1>
+        <div class="header-right">
+          <div class="live-indicator" id="liveIndicator">
+            <div class="live-dot"></div>
+            <span>Connecting...</span>
+          </div>
+          <div class="user-info" id="userInfo"></div>
+          <button class="secondary" onclick="logout()">Sign Out</button>
+        </div>
+      </header>
+
+      <!-- Dashboard Stats -->
+      <div class="dashboard">
+        <div class="stat-card">
+          <div class="number" id="statProjects">0</div>
+          <div class="label">Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="number" id="statHours">0</div>
+          <div class="label">Hours Logged</div>
+        </div>
+        <div class="stat-card">
+          <div class="number" id="statCompleted">0</div>
+          <div class="label">Completed</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <div class="control-group">
+          <label>Year:</label>
+          <select id="yearFilter" onchange="loadProjects()">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Type:</label>
+          <select id="typeFilter" onchange="loadProjects()">
+            <option value="">All Types</option>
+            <option value="Team">Team</option>
+            <option value="Individual">Individual</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Status:</label>
+          <select id="statusFilter" onchange="loadProjects()">
+            <option value="">All Status</option>
+            <option value="Planned">Planned</option>
+            <option value="In progress">In progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <input
+          type="text"
+          id="searchBox"
+          class="search-box"
+          placeholder="Search by name, owner, or notes..."
+          onkeyup="loadProjects()"
+        >
+        <button onclick="showNewProjectModal()">+ New Project</button>
+        <button onclick="showExportModal()">📥 Export CSV</button>
+      </div>
+
+      <!-- Projects Grid -->
+      <div class="projects-container" id="projectsContainer">
+        <div class="empty-state">Loading projects...</div>
+      </div>
+
+      <!-- Time Entries by Day -->
+      <div style="margin-top: 40px;">
+        <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
+        <div id="timeEntriesTable" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div class="empty-state">No time entries yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New/Edit Project Modal -->
+  <div id="projectModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Create Project</div>
+      <form onsubmit="saveProject(event)">
+        <div class="form-group">
+          <label>Project Name *</label>
+          <input type="text" id="projName" required>
+        </div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select id="projType" required>
+            <option value="Team">Team</option>
+            <option value="Individual">Individual</option>
+          </select>
+        </div>
+        <div class="form-group" id="ownerGroup">
+          <label>Owner Name (for individual projects)</label>
+          <input type="text" id="projOwner">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="projStatus">
+            <option value="Planned">Planned</option>
+            <option value="In progress">In progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Target Hours</label>
+          <input type="number" id="projTargetHours" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="projDueDate">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="projNotes"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Collaborators (optional)</label>
+          <input type="text" id="projCollaborators" placeholder="email1@company.com, email2@company.com">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="secondary" onclick="closeModal('projectModal')">Cancel</button>
+          <button type="submit">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Time Entry Modal -->
+  <div id="timeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Log Time</div>
+      <form onsubmit="saveTimeEntry(event)">
+        <div class="form-group">
+          <label>Hours *</label>
+          <input type="number" id="timeHours" step="0.25" required>
+        </div>
+        <div class="form-group">
+          <label>Date Worked *</label>
+          <input type="date" id="timeDate" required>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="timeNotes"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="secondary" onclick="closeModal('timeModal')">Cancel</button>
+          <button type="submit">Save Time</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Time Entry Modal -->
+  <div id="editTimeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Edit Time Entry</div>
+      <form onsubmit="updateTimeEntry(event)">
+        <div class="form-group">
+          <label>Hours *</label>
+          <input type="number" id="editTimeHours" step="0.25" required>
+        </div>
+        <div class="form-group">
+          <label>Date Worked *</label>
+          <input type="date" id="editTimeDate" required>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="editTimeNotes"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="secondary" onclick="closeModal('editTimeModal')">Cancel</button>
+          <button type="button" class="danger" onclick="deleteCurrentTimeEntry()" style="margin-right: auto;">Delete</button>
+          <button type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="exportModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Export Projects</div>
+      <div style="padding: 20px;">
+        <p style="margin-bottom: 15px; color: #666;">Choose what to export:</p>
+        <button onclick="exportAllToCSV()" style="width: 100%; margin-bottom: 10px; padding: 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+          📥 Export All Projects
+        </button>
+        <p style="text-align: center; color: #999; margin: 15px 0;">OR</p>
+        <label style="display: block; margin-bottom: 10px;">
+          <span style="color: #333; font-weight: 500;">Export Single Project:</span>
+          <select id="projectSelectExport" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="">-- Select a project --</option>
+          </select>
+        </label>
+        <button type="button" onclick="exportSingleProject()" style="width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+          📥 Export Selected Project
+        </button>
+        <div style="text-align: center; margin-top: 15px;">
+          <button type="button" class="secondary" onclick="closeModal('exportModal')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let supabase = null;
+    let currentUser = null;
+    let currentProjectId = null;
+    let realtimeSubscription = null;
+
+    // Initialize app
+    async function init() {
+      const saved = localStorage.getItem('supabaseConfig');
+      if (saved) {
+        const { projectUrl, anonKey } = JSON.parse(saved);
+        initSupabase(projectUrl, anonKey);
+        checkSession();
+      }
+    }
+
+    function saveCredentials() {
+      const projectUrl = document.getElementById('projectUrl').value.trim();
+      const anonKey = document.getElementById('anonKey').value.trim();
+
+      if (!projectUrl || !anonKey) {
+        showAuthMessage('Please enter both URL and key', true);
+        return;
+      }
+
+      localStorage.setItem('supabaseConfig', JSON.stringify({ projectUrl, anonKey }));
+      initSupabase(projectUrl, anonKey);
+      showAuthMessage('Connected! Now sign in below.', false);
+    }
+
+    function initSupabase(projectUrl, anonKey) {
+      const { createClient } = window.supabase;
+      supabase = createClient(projectUrl, anonKey);
+      setupRealtimeConnection();
+    }
+
+    async function checkSession() {
+      if (!supabase) return;
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        currentUser = data.session.user.email;
+        showMainApp();
+        loadProjects();
+      }
+    }
+
+    async function sendMagicLink() {
+      if (!supabase) {
+        showAuthMessage('Please connect to Supabase first', true);
+        return;
+      }
+
+      const email = document.getElementById('loginEmail').value.trim();
+      if (!email) {
+        showAuthMessage('Please enter your email', true);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: { shouldCreateUser: true }
+      });
+
+      if (error) {
+        showAuthMessage('Error: ' + error.message, true);
+      } else {
+        document.getElementById('magicLinkMsg').textContent =
+          'Magic link sent! Check your email and click the link to sign in.';
+      }
+    }
+
+    function showAuthMessage(msg, isError) {
+      const el = document.getElementById('authMessage');
+      el.className = 'auth-message' + (isError ? ' error' : '');
+      el.textContent = msg;
+    }
+
+    function showMainApp() {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      document.getElementById('userInfo').textContent = currentUser;
+
+      // Set current year in filter
+      const year = new Date().getFullYear();
+      document.getElementById('yearFilter').value = year;
+    }
+
+    function setupRealtimeConnection() {
+      if (realtimeSubscription) {
+        realtimeSubscription.unsubscribe();
+      }
+
+      realtimeSubscription = supabase
+        .channel('projects-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'ssa_projects' },
+          () => loadProjects()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'ssa_time_entries' },
+          () => loadProjects()
+        )
+        .subscribe((status) => {
+          updateLiveIndicator(status === 'SUBSCRIBED');
+        });
+    }
+
+    function updateLiveIndicator(connected) {
+      const el = document.getElementById('liveIndicator');
+      if (connected) {
+        el.classList.add('connected');
+        el.textContent = '';
+        const dot = document.createElement('div');
+        dot.className = 'live-dot';
+        el.appendChild(dot);
+        el.appendChild(document.createTextNode('Live updates on'));
+      } else {
+        el.classList.remove('connected');
+        el.innerHTML = '<div class="live-dot"></div> Reconnecting...';
+      }
+    }
+
+    async function loadProjects() {
+      if (!supabase || !currentUser) return;
+
+      try {
+        const year = document.getElementById('yearFilter').value;
+        const type = document.getElementById('typeFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const search = document.getElementById('searchBox').value.toLowerCase();
+
+        let query = supabase
+          .from('ssa_projects')
+          .select('*')
+          .eq('year', parseInt(year));
+
+        if (type) query = query.eq('project_type', type);
+        if (status) query = query.eq('status', status);
+
+        const { data: projects, error } = await query;
+
+        if (error) throw error;
+
+        // Client-side search
+        let filtered = projects;
+        if (search) {
+          filtered = projects.filter(p =>
+            p.name.toLowerCase().includes(search) ||
+            (p.owner && p.owner.toLowerCase().includes(search)) ||
+            (p.notes && p.notes.toLowerCase().includes(search))
+          );
+        }
+
+        // Get time entries
+        const { data: timeEntries } = await supabase
+          .from('ssa_time_entries')
+          .select('*');
+
+        renderProjects(filtered, timeEntries);
+        renderTimeEntriesByDay(filtered, timeEntries);
+        updateStats(filtered, timeEntries);
+      } catch (error) {
+        console.error('Load error:', error);
+      }
+    }
+
+    function renderProjects(projects, timeEntries) {
+      const container = document.getElementById('projectsContainer');
+
+      if (!projects.length) {
+        container.innerHTML = '<div class="empty-state">No projects found. Create one to get started!</div>';
+        return;
+      }
+
+      container.innerHTML = projects.map(p => {
+        const entries = timeEntries.filter(t => t.project_id === p.id);
+        const totalHours = entries.reduce((sum, t) => sum + t.hours, 0);
+        const progress = p.target_hours ? Math.min((totalHours / p.target_hours) * 100, 100) : 0;
+
+        return `
+          <div class="project-card">
+            <div class="project-header">
+              <div class="project-title">${p.name}</div>
+              <div style="display: flex; gap: 8px;">
+                <span class="badge ${p.project_type.toLowerCase()}">${p.project_type}</span>
+                <span class="status-badge ${p.status.toLowerCase().replace(' ', '-')}">${p.status}</span>
+              </div>
+            </div>
+            <div class="project-meta">
+              ${p.owner_name ? `<div><strong>Owner:</strong> ${p.owner_name}</div>` : ''}
+              ${p.due_date ? `<div><strong>Due:</strong> ${new Date(p.due_date).toLocaleDateString()}</div>` : ''}
+              ${p.target_hours ? `<div><strong>Target:</strong> ${p.target_hours}h</div>` : ''}
+              ${p.collaborators ? `<div><strong>Collaborators:</strong> ${p.collaborators}</div>` : ''}
+            </div>
+            ${p.target_hours ? `
+              <div class="project-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: ${progress}%"></div>
+                </div>
+                <div class="progress-text">${totalHours.toFixed(1)}h / ${p.target_hours}h (${Math.round(progress)}%)</div>
+              </div>
+            ` : ''}
+            ${p.notes ? `<div style="font-size: 12px; color: #666; margin: 12px 0; font-style: italic;">${p.notes}</div>` : ''}
+            <div class="time-entries">
+              <strong style="font-size: 12px;">Time Logged:</strong>
+              ${entries.length ? entries.map(e => `
+                <div class="time-entry">
+                  <strong>${e.hours}h</strong> by ${e.logged_by} on ${new Date(e.date_worked).toLocaleDateString()}
+                  ${e.notes ? `<br><em>${e.notes}</em>` : ''}
+                </div>
+              `).join('') : '<div class="time-entry">No time logged yet</div>'}
+            </div>
+            <div class="project-actions">
+              <button onclick="showTimeModal(${p.id})">+ Time</button>
+              <button class="secondary" onclick="editProject(${p.id})">Edit</button>
+              ${canDelete() ? `<button class="danger" onclick="deleteProject(${p.id})">Delete</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateStats(projects, timeEntries) {
+      document.getElementById('statProjects').textContent = projects.length;
+      document.getElementById('statHours').textContent =
+        timeEntries.reduce((sum, t) => sum + t.hours, 0).toFixed(1);
+      document.getElementById('statCompleted').textContent =
+        projects.filter(p => p.status === 'Completed').length;
+    }
+
+    function renderTimeEntriesByDay(projects, timeEntries) {
+      const container = document.getElementById('timeEntriesTable');
+
+      if (!timeEntries.length) {
+        container.innerHTML = '<div class="empty-state">No time entries yet</div>';
+        return;
+      }
+
+      // Group entries by date
+      const entriesByDate = {};
+      timeEntries.forEach(entry => {
+        const date = new Date(entry.date_worked).toLocaleDateString('en-US', {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+        if (!entriesByDate[date]) entriesByDate[date] = [];
+        entriesByDate[date].push(entry);
+      });
+
+      // Sort dates in descending order (newest first)
+      const sortedDates = Object.keys(entriesByDate).sort((a, b) =>
+        new Date(b) - new Date(a)
+      );
+
+      let html = `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Date</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Project</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Hours</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Logged By</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #333;">Notes</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600; color: #333;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      sortedDates.forEach(date => {
+        entriesByDate[date].forEach((entry, idx) => {
+          const project = projects.find(p => p.id === entry.project_id);
+          const projectName = project ? project.name : 'Unknown Project';
+          const isFirstInDay = idx === 0;
+
+          html += `
+            <tr style="border-bottom: 1px solid #eee; ${isFirstInDay ? 'border-top: 2px solid #e0e0e0;' : ''}">
+              ${isFirstInDay ? `<td style="padding: 12px; font-weight: 600; color: #667eea; background: #f9f9f9;">${date}</td>` : `<td style="padding: 12px; background: #f9f9f9;"></td>`}
+              <td style="padding: 12px;">${projectName}</td>
+              <td style="padding: 12px;"><strong>${entry.hours}h</strong></td>
+              <td style="padding: 12px; font-size: 12px; color: #666;">${entry.logged_by}</td>
+              <td style="padding: 12px; font-size: 12px; color: #999;">${entry.notes || '—'}</td>
+              <td style="padding: 12px; text-align: center;">
+                <button onclick="editTimeEntry(${entry.id})" style="padding: 4px 8px; font-size: 11px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer;">Edit</button>
+                ${canDelete() ? `<button onclick="deleteTimeEntry(${entry.id})" style="padding: 4px 8px; font-size: 11px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; margin-left: 4px;">Delete</button>` : ''}
+              </td>
+            </tr>
+          `;
+        });
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function showNewProjectModal() {
+      currentProjectId = null;
+      document.getElementById('projName').value = '';
+      document.getElementById('projType').value = 'Team';
+      document.getElementById('projOwner').value = '';
+      document.getElementById('projStatus').value = 'Planned';
+      document.getElementById('projTargetHours').value = '';
+      document.getElementById('projDueDate').value = '';
+      document.getElementById('projNotes').value = '';
+      document.getElementById('projCollaborators').value = '';
+      document.querySelector('#projectModal .modal-header').textContent = 'Create Project';
+      openModal('projectModal');
+    }
+
+    function editProject(id) {
+      // Simple implementation: would fetch project and populate modal
+      currentProjectId = id;
+      document.querySelector('#projectModal .modal-header').textContent = 'Edit Project';
+      openModal('projectModal');
+    }
+
+    async function saveProject(e) {
+      e.preventDefault();
+
+      const data = {
+        name: document.getElementById('projName').value,
+        project_type: document.getElementById('projType').value,
+        owner_name: document.getElementById('projOwner').value || null,
+        status: document.getElementById('projStatus').value,
+        target_hours: document.getElementById('projTargetHours').value ? parseInt(document.getElementById('projTargetHours').value) : null,
+        due_date: document.getElementById('projDueDate').value || null,
+        notes: document.getElementById('projNotes').value || null,
+        collaborators: document.getElementById('projCollaborators').value || null,
+        year: parseInt(document.getElementById('yearFilter').value),
+        created_by: currentUser
+      };
+
+      try {
+        if (currentProjectId) {
+          await supabase.from('ssa_projects').update(data).eq('id', currentProjectId);
+        } else {
+          await supabase.from('ssa_projects').insert([data]);
+        }
+        closeModal('projectModal');
+        loadProjects();
+      } catch (error) {
+        alert('Error saving project: ' + error.message);
+      }
+    }
+
+    function showTimeModal(projectId) {
+      currentProjectId = projectId;
+      document.getElementById('timeHours').value = '';
+      document.getElementById('timeDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('timeNotes').value = '';
+      openModal('timeModal');
+    }
+
+    async function saveTimeEntry(e) {
+      e.preventDefault();
+
+      const data = {
+        project_id: currentProjectId,
+        hours: parseFloat(document.getElementById('timeHours').value),
+        date_worked: document.getElementById('timeDate').value,
+        notes: document.getElementById('timeNotes').value || null,
+        logged_by: currentUser
+      };
+
+      try {
+        await supabase.from('ssa_time_entries').insert([data]);
+        closeModal('timeModal');
+        loadProjects();
+      } catch (error) {
+        alert('Error saving time: ' + error.message);
+      }
+    }
+
+    let editingTimeEntryId = null;
+
+    function editTimeEntry(entryId) {
+      const allTimeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
+      const entry = allTimeEntries.find(e => e.id === entryId);
+
+      if (!entry) {
+        alert('Entry not found');
+        return;
+      }
+
+      editingTimeEntryId = entryId;
+      document.getElementById('editTimeHours').value = entry.hours;
+      document.getElementById('editTimeDate').value = entry.date_worked;
+      document.getElementById('editTimeNotes').value = entry.notes || '';
+      openModal('editTimeModal');
+    }
+
+    async function updateTimeEntry(e) {
+      e.preventDefault();
+
+      if (!editingTimeEntryId) {
+        alert('No entry selected');
+        return;
+      }
+
+      const data = {
+        hours: parseFloat(document.getElementById('editTimeHours').value),
+        date_worked: document.getElementById('editTimeDate').value,
+        notes: document.getElementById('editTimeNotes').value || null
+      };
+
+      try {
+        await supabase
+          .from('ssa_time_entries')
+          .update(data)
+          .eq('id', editingTimeEntryId);
+        closeModal('editTimeModal');
+        editingTimeEntryId = null;
+        loadProjects();
+      } catch (error) {
+        alert('Error updating time: ' + error.message);
+      }
+    }
+
+    function deleteCurrentTimeEntry() {
+      if (!editingTimeEntryId) {
+        alert('No entry selected');
+        return;
+      }
+
+      if (!confirm('Are you sure you want to delete this time entry?')) {
+        return;
+      }
+
+      deleteTimeEntry(editingTimeEntryId);
+    }
+
+    async function deleteTimeEntry(entryId) {
+      try {
+        await supabase
+          .from('ssa_time_entries')
+          .delete()
+          .eq('id', entryId);
+        closeModal('editTimeModal');
+        editingTimeEntryId = null;
+        loadProjects();
+      } catch (error) {
+        alert('Error deleting time: ' + error.message);
+      }
+    }
+
+    async function deleteProject(projectId) {
+      if (!canDelete()) {
+        alert('You do not have permission to delete projects');
+        return;
+      }
+
+      if (!confirm('Are you sure you want to delete this project? This cannot be undone.')) {
+        return;
+      }
+
+      try {
+        await supabase
+          .from('ssa_projects')
+          .delete()
+          .eq('id', projectId);
+        loadProjects();
+      } catch (error) {
+        alert('Error deleting project: ' + error.message);
+      }
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Permission check for delete operations
+    function canDelete() {
+      const allowedEmails = ['c.delossantos@elsevier.com', 'k.lamkins@elsevier.com', 'y.mejala@elsevier.com'];
+      return allowedEmails.includes(currentUser);
+    }
+
+    function showExportModal() {
+      const allProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+      const selectEl = document.getElementById('projectSelectExport');
+      selectEl.innerHTML = '<option value="">-- Select a project --</option>';
+
+      allProjects.forEach(p => {
+        const option = document.createElement('option');
+        option.value = p.id;
+        option.textContent = p.name;
+        selectEl.appendChild(option);
+      });
+
+      openModal('exportModal');
+    }
+
+    function exportAllToCSV() {
+      const allProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+      if (allProjects.length === 0) {
+        alert('No projects to export');
+        return;
+      }
+
+      let csv = 'Project Name,Type,Owner,Status,Target Hours,Due Date,Collaborators,Notes,Year,Created By,Created At\n';
+
+      allProjects.forEach(p => {
+        const row = [
+          `"${(p.name || '').replace(/"/g, '""')}"`,
+          p.project_type || '',
+          p.owner_name || '',
+          p.status || '',
+          p.target_hours || '',
+          p.due_date || '',
+          `"${(p.collaborators || '').replace(/"/g, '""')}"`,
+          `"${(p.notes || '').replace(/"/g, '""')}"`,
+          p.year || '',
+          p.created_by || '',
+          p.created_at || ''
+        ];
+        csv += row.join(',') + '\n';
+      });
+
+      downloadCSV(csv, `projects-all-${new Date().toISOString().split('T')[0]}.csv`);
+      closeModal('exportModal');
+    }
+
+    function exportSingleProject() {
+      const projectId = parseInt(document.getElementById('projectSelectExport').value);
+      if (!projectId) {
+        alert('Please select a project');
+        return;
+      }
+
+      const allProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+      const project = allProjects.find(p => p.id === projectId);
+      if (!project) {
+        alert('Project not found');
+        return;
+      }
+
+      let csv = 'Project Name,Type,Owner,Status,Target Hours,Due Date,Collaborators,Notes,Year,Created By,Created At\n';
+      const row = [
+        `"${(project.name || '').replace(/"/g, '""')}"`,
+        project.project_type || '',
+        project.owner_name || '',
+        project.status || '',
+        project.target_hours || '',
+        project.due_date || '',
+        `"${(project.collaborators || '').replace(/"/g, '""')}"`,
+        `"${(project.notes || '').replace(/"/g, '""')}"`,
+        project.year || '',
+        project.created_by || '',
+        project.created_at || ''
+      ];
+      csv += row.join(',') + '\n';
+
+      downloadCSV(csv, `project-${project.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`);
+      closeModal('exportModal');
+    }
+
+    function downloadCSV(csv, filename) {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function logout() {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+      currentUser = null;
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('magicLinkMsg').textContent = '';
+    }
+
+    // Close modal on click outside
+    window.onclick = (e) => {
+      ['projectModal', 'timeModal'].forEach(id => {
+        const modal = document.getElementById(id);
+        if (e.target === modal) {
+          closeModal(id);
+        }
+      });
+    };
+
+    // Handle OAuth redirect
+    async function handleRedirect() {
+      if (!supabase) return;
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        currentUser = data.session.user.email;
+        showMainApp();
+        loadProjects();
+      }
+    }
+
+    // Start app
+    init();
+    window.addEventListener('load', handleRedirect);
+  </script>
+</body>
+</html>
