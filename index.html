@@ -11,24 +11,16 @@
     .container { max-width: 1200px; margin: 0 auto; }
     header { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     header h1 { font-size: 24px; color: #333; }
-    .header-right { display: flex; gap: 15px; align-items: center; }
-    .live-indicator { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #999; }
-    .live-indicator.active { color: #28a745; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #999; animation: pulse 2s infinite; }
-    .dot.active { background: #28a745; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     button { padding: 10px 16px; border: none; border-radius: 4px; background: #667eea; color: white; cursor: pointer; font-size: 14px; }
     button:hover { background: #5568d3; }
     button.secondary { background: #6c757d; }
     button.secondary:hover { background: #5a6268; }
-    button.danger { background: #dc3545; }
-    button.danger:hover { background: #c82333; }
     .auth-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
     .auth-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 100%; max-width: 400px; }
     .auth-box h2 { text-align: center; margin-bottom: 30px; color: #333; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 6px; color: #333; font-weight: 500; font-size: 14px; }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
     .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
     .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .stat-card h3 { font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 10px; }
@@ -41,28 +33,24 @@
     .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #e3f2fd; color: #1976d2; margin-right: 8px; }
     .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #cfe2ff; color: #084298; }
     .project-meta { font-size: 13px; color: #666; margin: 12px 0; }
-    .project-actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-    .project-actions button { flex: 1; min-width: 80px; padding: 8px; font-size: 12px; }
+    .project-actions { display: flex; gap: 8px; margin-top: 15px; }
+    .project-actions button { flex: 1; padding: 8px; font-size: 12px; }
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
     .modal.active { display: flex; }
     .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
     .modal-header { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #333; }
-    .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+    .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
     .hidden { display: none; }
     .empty-state { text-align: center; padding: 40px 20px; color: #999; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 20px; }
-    table thead tr { background: #f5f5f5; border-bottom: 2px solid #ddd; }
-    table th { padding: 12px; text-align: left; font-weight: 600; color: #333; }
-    table td { padding: 12px; border-bottom: 1px solid #eee; }
-    table tbody tr:hover { background: #f9f9f9; }
-    table button { padding: 4px 8px; font-size: 11px; }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Auth Screen -->
     <div id="authScreen" class="auth-screen">
       <div class="auth-box">
         <h2>Project Tracker</h2>
+
         <div style="margin-bottom: 30px;">
           <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Supabase Connection</h3>
           <div class="form-group">
@@ -75,7 +63,9 @@
           </div>
           <button onclick="connectSupabase()" style="width: 100%;">Connect</button>
         </div>
+
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
         <div>
           <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Sign In</h3>
           <div class="form-group">
@@ -88,16 +78,11 @@
       </div>
     </div>
 
+    <!-- Main App -->
     <div id="mainApp" class="hidden">
       <header>
         <h1>📊 Project Tracker</h1>
-        <div class="header-right">
-          <div class="live-indicator" id="liveIndicator">
-            <div class="dot"></div>
-            <span>Reconnecting...</span>
-          </div>
-          <button class="secondary" onclick="logout()">Logout</button>
-        </div>
+        <button class="secondary" onclick="logout()">Logout</button>
       </header>
 
       <div class="dashboard">
@@ -122,18 +107,13 @@
         </select>
         <input type="text" id="searchBox" placeholder="Search projects..." onkeyup="loadProjects()" style="flex: 1; min-width: 200px;">
         <button onclick="showProjectModal()">+ New Project</button>
-        <button onclick="showExportModal()">📥 Export CSV</button>
       </div>
 
       <div class="projects-grid" id="projectsGrid"></div>
-
-      <div style="margin-top: 40px;">
-        <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
-        <div id="timeEntriesContainer"></div>
-      </div>
     </div>
   </div>
 
+  <!-- Project Modal -->
   <div id="projectModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">Create Project</div>
@@ -166,10 +146,6 @@
           <input type="date" id="projDueDate">
         </div>
         <div class="form-group">
-          <label>Collaborators (optional)</label>
-          <input type="text" id="projCollaborators" placeholder="email1@company.com, email2@company.com">
-        </div>
-        <div class="form-group">
           <label>Notes</label>
           <textarea id="projNotes"></textarea>
         </div>
@@ -181,6 +157,7 @@
     </div>
   </div>
 
+  <!-- Time Modal -->
   <div id="timeModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">Log Time</div>
@@ -205,59 +182,10 @@
     </div>
   </div>
 
-  <div id="editTimeModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">Edit Time Entry</div>
-      <form onsubmit="updateTimeEntry(event)">
-        <div class="form-group">
-          <label>Hours *</label>
-          <input type="number" id="editTimeHours" step="0.25" required>
-        </div>
-        <div class="form-group">
-          <label>Date *</label>
-          <input type="date" id="editTimeDate" required>
-        </div>
-        <div class="form-group">
-          <label>Notes</label>
-          <textarea id="editTimeNotes"></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="secondary" onclick="closeModal('editTimeModal')">Cancel</button>
-          <button type="button" class="danger" onclick="deleteCurrentTimeEntry()" style="margin-right: auto;">Delete</button>
-          <button type="submit">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div id="exportModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">Export Projects</div>
-      <div style="padding: 20px;">
-        <button onclick="exportAllToCSV()" style="width: 100%; margin-bottom: 10px;">📥 Export All Projects</button>
-        <p style="text-align: center; color: #999; margin: 15px 0;">OR</p>
-        <label style="display: block; margin-bottom: 10px;">
-          <span style="color: #333; font-weight: 500;">Export Single Project:</span>
-          <select id="projectSelectExport" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px;">
-            <option value="">-- Select a project --</option>
-          </select>
-        </label>
-        <button type="button" onclick="exportSingleProject()" style="width: 100%; background: #6c757d; margin-bottom: 15px;">📥 Export Selected</button>
-        <button type="button" class="secondary" onclick="closeModal('exportModal')" style="width: 100%;">Close</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     let db = null;
     let user = null;
     let currentProjectId = null;
-    let editingTimeId = null;
-    let realtimeSubscription = null;
-
-    function canDelete() {
-      return ['c.delossantos@elsevier.com', 'k.lamkins@elsevier.com', 'y.mejala@elsevier.com'].includes(user);
-    }
 
     function connectSupabase() {
       const url = document.getElementById('projectUrl').value.trim();
@@ -301,7 +229,6 @@
         if (data.session) {
           user = data.session.user.email;
           showApp();
-          setupRealtime();
           loadProjects();
         }
       }
@@ -312,28 +239,16 @@
       document.getElementById('mainApp').classList.remove('hidden');
     }
 
-    function setupRealtime() {
-      if (realtimeSubscription) realtimeSubscription.unsubscribe();
-      realtimeSubscription = db.channel('changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_projects' }, () => loadProjects())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_time_entries' }, () => loadProjects())
-        .subscribe((status) => {
-          const ind = document.getElementById('liveIndicator');
-          if (status === 'SUBSCRIBED') {
-            ind.innerHTML = '<div class="dot active"></div><span style="color: #28a745;">Live updates on</span>';
-          }
-        });
-    }
-
     async function loadProjects() {
       if (!db) return;
       const year = parseInt(document.getElementById('yearFilter').value);
       const search = document.getElementById('searchBox').value.toLowerCase();
+
       const { data: projects } = await db.from('ssa_projects').select('*').eq('year', year);
       const { data: times } = await db.from('ssa_time_entries').select('*');
-      let filtered = (projects || []).filter(p => p.name.toLowerCase().includes(search) || (p.collaborators && p.collaborators.toLowerCase().includes(search)));
+
+      let filtered = (projects || []).filter(p => p.name.toLowerCase().includes(search));
       renderProjects(filtered, times || []);
-      renderTimeEntries(times || []);
       updateStats(filtered, times || []);
     }
 
@@ -343,10 +258,12 @@
         grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">No projects</div>';
         return;
       }
+
       grid.innerHTML = projects.map(p => {
         const entries = times.filter(t => t.project_id === p.id);
         const totalHours = entries.reduce((s, t) => s + t.hours, 0);
         const progress = p.target_hours ? Math.min((totalHours / p.target_hours) * 100, 100) : 0;
+
         return `
           <div class="project-card">
             <div class="project-title">${p.name}</div>
@@ -355,51 +272,15 @@
             <div class="project-meta">
               ${p.due_date ? `<div>Due: ${new Date(p.due_date).toLocaleDateString()}</div>` : ''}
               ${p.target_hours ? `<div>Target: ${p.target_hours}h | Logged: ${totalHours.toFixed(1)}h</div>` : ''}
-              ${p.collaborators ? `<div>Collaborators: ${p.collaborators}</div>` : ''}
               ${p.notes ? `<div><em>${p.notes}</em></div>` : ''}
             </div>
             <div class="project-actions">
               <button onclick="showTimeModal(${p.id})">+ Time</button>
               <button class="secondary" onclick="editProject(${p.id})">Edit</button>
-              ${canDelete() ? `<button class="danger" onclick="deleteProject(${p.id})">Delete</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
-    }
-
-    function renderTimeEntries(times) {
-      const container = document.getElementById('timeEntriesContainer');
-      if (!times.length) {
-        container.innerHTML = '<div class="empty-state">No time entries</div>';
-        return;
-      }
-      const byDate = {};
-      times.forEach(t => {
-        const date = new Date(t.date_worked).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-        if (!byDate[date]) byDate[date] = [];
-        byDate[date].push(t);
-      });
-      const sorted = Object.keys(byDate).sort((a, b) => new Date(b) - new Date(a));
-      let html = `<table><thead><tr><th>Date</th><th>Project</th><th>Hours</th><th>Logged By</th><th>Notes</th><th>Actions</th></tr></thead><tbody>`;
-      sorted.forEach(date => {
-        byDate[date].forEach((entry, idx) => {
-          const project = document.querySelectorAll('.project-card') || [];
-          html += `<tr>
-            ${idx === 0 ? `<td style="font-weight: 600; color: #667eea; background: #f9f9f9;">${date}</td>` : `<td style="background: #f9f9f9;"></td>`}
-            <td>Project ${entry.project_id}</td>
-            <td><strong>${entry.hours}h</strong></td>
-            <td>${entry.logged_by}</td>
-            <td>${entry.notes || '—'}</td>
-            <td style="text-align: center;">
-              <button onclick="editTimeEntry(${entry.id})" style="padding: 4px 8px; font-size: 11px;">Edit</button>
-              ${canDelete() ? `<button onclick="deleteTimeEntry(${entry.id})" class="danger" style="padding: 4px 8px; font-size: 11px;">Del</button>` : ''}
-            </td>
-          </tr>`;
-        });
-      });
-      html += `</tbody></table>`;
-      container.innerHTML = html;
     }
 
     function updateStats(projects, times) {
@@ -416,7 +297,6 @@
       document.getElementById('projTargetHours').value = '';
       document.getElementById('projDueDate').value = '';
       document.getElementById('projNotes').value = '';
-      document.getElementById('projCollaborators').value = '';
       openModal('projectModal');
     }
 
@@ -428,6 +308,7 @@
     async function saveProject(e) {
       e.preventDefault();
       if (!db) return;
+
       const data = {
         name: document.getElementById('projName').value,
         project_type: document.getElementById('projType').value,
@@ -435,10 +316,10 @@
         target_hours: document.getElementById('projTargetHours').value ? parseInt(document.getElementById('projTargetHours').value) : null,
         due_date: document.getElementById('projDueDate').value || null,
         notes: document.getElementById('projNotes').value || null,
-        collaborators: document.getElementById('projCollaborators').value || null,
         year: parseInt(document.getElementById('yearFilter').value),
         created_by: user
       };
+
       try {
         if (currentProjectId) {
           await db.from('ssa_projects').update(data).eq('id', currentProjectId);
@@ -446,21 +327,6 @@
           await db.from('ssa_projects').insert([data]);
         }
         closeModal('projectModal');
-        loadProjects();
-      } catch (error) {
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function deleteProject(id) {
-      if (!canDelete()) {
-        alert('No permission');
-        return;
-      }
-      if (!confirm('Delete project? Time entries will also be deleted.')) return;
-      try {
-        await db.from('ssa_time_entries').delete().eq('project_id', id);
-        await db.from('ssa_projects').delete().eq('id', id);
         loadProjects();
       } catch (error) {
         alert('Error: ' + error.message);
@@ -478,6 +344,7 @@
     async function saveTimeEntry(e) {
       e.preventDefault();
       if (!db) return;
+
       try {
         await db.from('ssa_time_entries').insert([{
           project_id: currentProjectId,
@@ -491,97 +358,6 @@
       } catch (error) {
         alert('Error: ' + error.message);
       }
-    }
-
-    function editTimeEntry(id) {
-      editingTimeId = id;
-      document.getElementById('editTimeHours').value = '1';
-      document.getElementById('editTimeDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('editTimeNotes').value = '';
-      openModal('editTimeModal');
-    }
-
-    async function updateTimeEntry(e) {
-      e.preventDefault();
-      if (!db || !editingTimeId) return;
-      try {
-        await db.from('ssa_time_entries').update({
-          hours: parseFloat(document.getElementById('editTimeHours').value),
-          date_worked: document.getElementById('editTimeDate').value,
-          notes: document.getElementById('editTimeNotes').value || null
-        }).eq('id', editingTimeId);
-        closeModal('editTimeModal');
-        editingTimeId = null;
-        loadProjects();
-      } catch (error) {
-        alert('Error: ' + error.message);
-      }
-    }
-
-    function deleteCurrentTimeEntry() {
-      if (!editingTimeId) return;
-      if (!confirm('Delete?')) return;
-      deleteTimeEntry(editingTimeId);
-    }
-
-    async function deleteTimeEntry(id) {
-      try {
-        await db.from('ssa_time_entries').delete().eq('id', id);
-        closeModal('editTimeModal');
-        editingTimeId = null;
-        loadProjects();
-      } catch (error) {
-        alert('Error: ' + error.message);
-      }
-    }
-
-    function showExportModal() {
-      const projects = document.querySelectorAll('.project-card');
-      const select = document.getElementById('projectSelectExport');
-      select.innerHTML = '<option value="">-- Select --</option>';
-      Array.from(projects).forEach((card, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = card.querySelector('.project-title').textContent;
-        select.appendChild(opt);
-      });
-      openModal('exportModal');
-    }
-
-    function exportAllToCSV() {
-      let csv = 'Project,Type,Status,Hours\n';
-      document.querySelectorAll('.project-card').forEach(card => {
-        const name = card.querySelector('.project-title').textContent;
-        const type = card.querySelector('.badge').textContent;
-        const status = card.querySelector('.status-badge').textContent;
-        const meta = card.querySelector('.project-meta').textContent;
-        csv += `"${name}","${type}","${status}","${meta}"\n`;
-      });
-      downloadCSV(csv, 'projects-all.csv');
-      closeModal('exportModal');
-    }
-
-    function exportSingleProject() {
-      const idx = parseInt(document.getElementById('projectSelectExport').value);
-      if (isNaN(idx)) {
-        alert('Select a project');
-        return;
-      }
-      const cards = document.querySelectorAll('.project-card');
-      if (idx >= cards.length) return;
-      const card = cards[idx];
-      const name = card.querySelector('.project-title').textContent;
-      let csv = `Project: ${name}\n`;
-      downloadCSV(csv, `project-${name.replace(/\s+/g, '-')}.csv`);
-      closeModal('exportModal');
-    }
-
-    function downloadCSV(csv, filename) {
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
     }
 
     function openModal(id) {
@@ -602,11 +378,10 @@
     init();
     window.addEventListener('load', async () => {
       if (db) {
-        db.auth.onAuthStateChange((event, session) => {
+        const { data } = await db.auth.onAuthStateChange((event, session) => {
           if (session) {
             user = session.user.email;
             showApp();
-            setupRealtime();
             loadProjects();
           }
         });
