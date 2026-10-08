@@ -29,3 +29,91 @@
 (()=>{const $=s=>document.querySelector(s),today=new Date().toISOString().slice(0,10),yearNow=new Date().getFullYear();let supa=null,projects=[],logs=[],user=null,channel=null;const cfg=()=>({url:localStorage.getItem('ssa_supabase_url'),key:localStorage.getItem('ssa_supabase_key')});function show(id){['setup','login','app'].forEach(x=>$('#'+x).classList.add('hidden'));$('#'+id).classList.remove('hidden')}function toast(t){const el=$('#toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2800)}function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function dateFmt(v){return v?new Date(v+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'—'}function hfmt(n){return (Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:2})}async function boot(){const c=cfg();if(!c.url||!c.key){show('setup');return}supa=window.supabase.createClient(c.url,c.key);const {data:{session}}=await supa.auth.getSession();if(session){user=session.user;await startApp()}else show('login');supa.auth.onAuthStateChange(async(_,session)=>{if(session){user=session.user;await startApp()}else{user=null;show('login')}})}$('#saveConfig').onclick=()=>{const u=$('#urlInput').value.trim(),k=$('#keyInput').value.trim();if(!u.startsWith('https://')||!k){toast('Enter a valid project URL and public key.');return}localStorage.setItem('ssa_supabase_url',u);localStorage.setItem('ssa_supabase_key',k);boot()};$('#sendLink').onclick=async()=>{const email=$('#emailInput').value.trim();if(!email)return;$('#loginMsg').textContent='Sending sign-in link…';const {error}=await supa.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}});$('#loginMsg').textContent=error?error.message:'Check your email for the sign-in link. Only approved team emails can access tracker data.'};$('#logoutBtn').onclick=()=>supa.auth.signOut();$('#scopeFilter').onchange=render;$('#statusFilter').onchange=render;$('#yearFilter').onchange=render;$('#search').oninput=render;function totals(){const map={};logs.forEach(l=>map[l.project_id]=(map[l.project_id]||0)+Number(l.hours));return map}async function startApp(){show('app');$('#userLabel').textContent=user.user_metadata?.full_name||user.email;const yf=$('#yearFilter');yf.innerHTML='<option value="all">All years</option>'+Array.from({length:8},(_,i)=>yearNow-3+i).map(y=>`<option ${y===yearNow?'selected':''}>${y}</option>`).join('');await loadAll();subscribe()}async function loadAll(){const [p,l]=await Promise.all([supa.from('ssa_projects').select('*').order('updated_at',{ascending:false}),supa.from('ssa_time_entries').select('*, ssa_projects(name)').order('work_date',{ascending:false})]);if(p.error||l.error){$('#message').textContent=(p.error||l.error).message;$('#message').classList.remove('hidden');return}projects=p.data||[];logs=l.data||[];$('#message').classList.add('hidden');render()}function subscribe(){if(channel)supa.removeChannel(channel);channel=supa.channel('ssa-live-tracker').on('postgres_changes',{event:'*',schema:'public',table:'ssa_projects'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ssa_time_entries'},loadAll).subscribe(status=>{const live=status==='SUBSCRIBED';$('#liveDot').classList.toggle('live',live);$('#liveLabel').textContent=live?'Live updates on':'Reconnecting…'})}function render(){const sum=totals(),year=$('#yearFilter').value,scope=$('#scopeFilter').value,status=$('#statusFilter').value.toLowerCase(),q=$('#search').value.toLowerCase();let rows=projects.filter(p=>(year==='all'||String(p.project_year)===year)&&(scope==='all'||p.scope===scope)&&(status==='all'||p.status.toLowerCase()===status)&&(!q||(p.name+' '+(p.owner_name||'')+' '+(p.notes||'')).toLowerCase().includes(q)));$('#countStat').textContent=rows.length;$('#hoursStat').textContent=hfmt(Object.values(sum).reduce((a,b)=>a+b,0));$('#doneStat').textContent=rows.filter(p=>p.status==='Completed').length;$('#emptyState').classList.toggle('hidden',rows.length>0);$('#projectRows').innerHTML=rows.map(p=>`<tr><td><div class="name">${esc(p.name)}</div>${p.notes?`<div class="sub">${esc(p.notes).slice(0,105)}${p.notes.length>105?'…':''}</div>`:''}</td><td><span class="badge ${p.scope}">${p.scope==='team'?'Team':'Individual'}</span>${p.owner_name?`<div class="sub">${esc(p.owner_name)}</div>`:''}</td><td><span class="badge ${p.status.toLowerCase().replace(' ','-')}">${esc(p.status)}</span></td><td>${p.target_hours==null?'—':hfmt(p.target_hours)}</td><td><b>${hfmt(sum[p.id]||0)}</b></td><td>${dateFmt(p.due_date)}</td><td><div class="right"><button class="secondary" data-log="${p.id}">＋ Time</button><button class="ghost" title="Details" data-detail="${p.id}">•••</button></div></td></tr>`).join('');document.querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>openTime(b.dataset.log));document.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>detail(b.dataset.detail));$('#recentLogs').innerHTML=logs.slice(0,12).map(l=>`<div class="log-item"><div><b>${esc(l.ssa_projects?.name||'Project')}</b><div class="sub">${dateFmt(l.work_date)} · ${esc(l.display_name||'Team member')}${l.note?' · '+esc(l.note):''}</div></div><b>${hfmt(l.hours)} h</b></div>`).join('')||'<div class="empty">No time entries yet.</div>'}$('#addProject').onclick=()=>openProject();$('#pScope').onchange=()=>$('#ownerRow').classList.toggle('hidden',$('#pScope').value==='team');function openProject(p=null){$('#projectForm').reset();$('#projectId').value=p?.id||'';$('#projectTitle').textContent=p?'Edit project':'New project';$('#pName').value=p?.name||'';$('#pScope').value=p?.scope||'team';$('#pOwner').value=p?.owner_name||'';$('#pStatus').value=p?.status||'Planned';$('#pYear').value=p?.project_year||yearNow;$('#pTarget').value=p?.target_hours??'';$('#pDue').value=p?.due_date||'';$('#pNotes').value=p?.notes||'';$('#ownerRow').classList.toggle('hidden',$('#pScope').value==='team');$('#projectModal').style.display='flex'}$('#projectForm').onsubmit=async e=>{e.preventDefault();const id=$('#projectId').value;const obj={name:$('#pName').value.trim(),scope:$('#pScope').value,owner_name:$('#pScope').value==='individual'?$('#pOwner').value.trim():null,status:$('#pStatus').value,project_year:Number($('#pYear').value),target_hours:$('#pTarget').value?Number($('#pTarget').value):null,due_date:$('#pDue').value||null,notes:$('#pNotes').value.trim()||null};const {error}=id?await supa.from('ssa_projects').update(obj).eq('id',id):await supa.from('ssa_projects').insert(obj);if(error){toast(error.message);return}$('#projectModal').style.display='none';toast(id?'Project updated':'Project added');await loadAll()};function openTime(id){const p=projects.find(x=>x.id===id);if(!p)return;$('#tProject').value=id;$('#tProjectName').textContent=p.name;$('#tHours').value='';$('#tDate').value=today;$('#tNote').value='';$('#timeModal').style.display='flex'}$('#timeForm').onsubmit=async e=>{e.preventDefault();const obj={project_id:$('#tProject').value,user_id:user.id,display_name:user.user_metadata?.full_name||user.email,work_date:$('#tDate').value,hours:Number($('#tHours').value),note:$('#tNote').value.trim()||null};const {error}=await supa.from('ssa_time_entries').insert(obj);if(error){toast(error.message);return}$('#timeModal').style.display='none';toast('Time entry added');await loadAll()};function detail(id){const p=projects.find(x=>x.id===id),ts=logs.filter(l=>l.project_id===id),tot=ts.reduce((s,x)=>s+Number(x.hours),0);$('#dTitle').textContent=p.name;$('#dContent').innerHTML=`<p><span class="badge ${p.scope}">${p.scope==='team'?'Team project':'Individual project'}</span> <span class="badge ${p.status.toLowerCase().replace(' ','-')}">${esc(p.status)}</span></p><p class="muted">${esc(p.notes||'No notes added.')}</p><p><b>${hfmt(tot)} hours logged</b>${p.target_hours!=null?' · '+hfmt(p.target_hours)+' target':''}</p><div class="section-head"><h2>Time log</h2><button data-detail-log>＋ Log time</button></div><div class="log-list">${ts.map(l=>`<div class="log-item"><div><b>${hfmt(l.hours)} h</b><div class="sub">${dateFmt(l.work_date)} · ${esc(l.display_name||'Team member')}${l.note?' · '+esc(l.note):''}</div></div></div>`).join('')||'<p class="muted">No time recorded yet.</p>'}</div><div class="form-actions"><button class="secondary" data-edit>Edit project</button></div>`;$('#detailModal').style.display='flex';$('#dContent [data-detail-log]').onclick=()=>{closeModals();openTime(id)};$('#dContent [data-edit]').onclick=()=>{closeModals();openProject(p)}}function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.style.display='none')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModals);document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals()}));boot()})();
 </script>
 </body></html>
+-- SSA Projects Tracker Database Schema
+-- Run this in Supabase SQL Editor
+
+-- Create team members table
+create table if not exists public.ssa_team_members (
+  id bigserial primary key,
+  email text unique not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ssa_team_members enable row level security;
+
+create policy "Team members can view all members"
+  on public.ssa_team_members for select
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+-- Create projects table
+create table if not exists public.ssa_projects (
+  id bigserial primary key,
+  name text not null,
+  project_type text default 'Team',
+  owner text,
+  status text default 'Planned',
+  target_hours integer,
+  due_date date,
+  notes text,
+  year integer default 2026,
+  created_by text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ssa_projects enable row level security;
+
+create policy "Approved team members can view projects"
+  on public.ssa_projects for select
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+create policy "Approved team members can create projects"
+  on public.ssa_projects for insert
+  with check (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+create policy "Team members can update projects"
+  on public.ssa_projects for update
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+-- Create time entries table
+create table if not exists public.ssa_time_entries (
+  id bigserial primary key,
+  project_id bigint references public.ssa_projects(id) on delete cascade,
+  hours decimal(5,2) not null,
+  date_worked date not null,
+  notes text,
+  logged_by text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ssa_time_entries enable row level security;
+
+create policy "Approved team can view time entries"
+  on public.ssa_time_entries for select
+  using (auth.jwt() ->> 'email' in (select email from public.ssa_team_members));
+
+create policy "Users can create own time entries"
+  on public.ssa_time_entries for insert
+  with check (auth.jwt() ->> 'email' in (select email from public.ssa_team_members)
+    and logged_by = (auth.jwt() ->> 'email'));
+
+create policy "Users can update own time entries"
+  on public.ssa_time_entries for update
+  using (auth.jwt() ->> 'email' = logged_by);
+
+create policy "Users can delete own time entries"
+  on public.ssa_time_entries for delete
+  using (auth.jwt() ->> 'email' = logged_by);
+
+-- Create indexes for performance
+create index if not exists idx_projects_year on public.ssa_projects(year);
+create index if not exists idx_projects_status on public.ssa_projects(status);
+create index if not exists idx_time_entries_project on public.ssa_time_entries(project_id);
+create index if not exists idx_time_entries_logged_by on public.ssa_time_entries(logged_by);
+
+-- Insert approved team members (IMPORTANT: Replace with your actual company emails - lowercase)
+insert into public.ssa_team_members(email) values
+  ('c.damian@elsevier.com'),
+  ('e.gatan@elsevier.com')
+on conflict (email) do nothing;
