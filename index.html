@@ -13,13 +13,24 @@
     input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
     button { width: 100%; padding: 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
     button:hover { background: #5568d3; }
-    .app { display: none; max-width: 1200px; margin: 0 auto; }
+    .test { background: #28a745; }
+    .test:hover { background: #218838; }
+    .app { display: none; max-width: 1200px; margin: 0 auto; color: white; }
     .app.show { display: block; }
-    header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; }
-    h1 { color: #667eea; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; margin-top: 20px; }
+    header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    h1 { color: #667eea; margin: 0; }
+    .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; }
+    .controls input { flex: 1; }
+    .controls button { flex: 0 1 150px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; color: #333; }
     th { background: #f5f5f5; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }
     td { padding: 12px; border-bottom: 1px solid #eee; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .card { background: white; padding: 20px; border-radius: 8px; color: #333; }
+    .card h3 { margin-bottom: 10px; }
+    .card .actions { display: flex; gap: 8px; margin-top: 15px; }
+    .card .actions button { padding: 8px; font-size: 12px; }
+    hr { margin: 20px 0; border: none; border-top: 1px solid rgba(255,255,255,0.2); }
   </style>
 </head>
 <body>
@@ -34,12 +45,18 @@
       <input type="password" id="key" placeholder="sb_publishable_...">
     </div>
     <button onclick="connect()">Connect</button>
-    <br>
-    <div class="form-group" style="margin-top: 20px;">
+    
+    <hr>
+    
+    <div class="form-group">
       <label>Email</label>
       <input type="email" id="email" placeholder="your@email.com">
     </div>
     <button onclick="login()">Send Magic Link</button>
+    
+    <hr>
+    
+    <button class="test" onclick="testMode()">🧪 Enter Test Mode</button>
   </div>
 
   <div id="app" class="app">
@@ -47,15 +64,26 @@
       <h1>📊 Project Tracker</h1>
       <button onclick="logout()">Logout</button>
     </header>
-    <button onclick="alert('Add project feature coming soon!')">+ New Project</button>
+    
+    <div class="controls">
+      <input type="text" id="newProj" placeholder="Project name...">
+      <button onclick="addProject()">+ Project</button>
+      <button onclick="exportCSV()">📥 Export</button>
+    </div>
+
+    <div id="projects" class="grid"></div>
+
+    <h2>Time Entries</h2>
     <table>
-      <thead><tr><th>Date</th><th>Hours</th></tr></thead>
-      <tbody id="list"></tbody>
+      <thead><tr><th>Date</th><th>Project</th><th>Hours</th><th>Notes</th></tr></thead>
+      <tbody id="entries"></tbody>
     </table>
   </div>
 
   <script>
     let db = null;
+    let projects = [];
+    let entries = [];
 
     function connect() {
       const url = document.getElementById('url').value;
@@ -70,25 +98,128 @@
     async function login() {
       if (!db) return alert('Connect first');
       const email = document.getElementById('email').value;
-      await db.auth.signInWithOtp({email});
-      alert('Check your email!');
+      try {
+        await db.auth.signInWithOtp({email});
+        alert('Check your email!');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function testMode() {
+      localStorage.setItem('testMode', 'true');
+      showApp();
+      loadData();
     }
 
     async function init() {
+      if (localStorage.getItem('testMode')) {
+        showApp();
+        loadData();
+        return;
+      }
       const saved = localStorage.getItem('sb');
       if (saved) {
         const {url, key} = JSON.parse(saved);
         db = supabase.createClient(url, key);
         const {data} = await db.auth.getSession();
         if (data.session) {
-          document.getElementById('auth').style.display = 'none';
-          document.getElementById('app').classList.add('show');
+          showApp();
+          loadData();
         }
       }
     }
 
+    function showApp() {
+      document.getElementById('auth').style.display = 'none';
+      document.getElementById('app').classList.add('show');
+    }
+
+    async function loadData() {
+      if (localStorage.getItem('testMode')) {
+        projects = JSON.parse(localStorage.getItem('projects') || '[]');
+        entries = JSON.parse(localStorage.getItem('entries') || '[]');
+      } else if (db) {
+        const {data: p} = await db.from('ssa_projects').select('*');
+        const {data: e} = await db.from('ssa_time_entries').select('*');
+        projects = p || [];
+        entries = e || [];
+      }
+      render();
+    }
+
+    function render() {
+      document.getElementById('projects').innerHTML = projects.map(p => `
+        <div class="card">
+          <h3>${p.name}</h3>
+          <p style="font-size: 12px; margin: 5px 0;">Status: ${p.status}</p>
+          <div class="actions">
+            <button onclick="logTime('${p.id}')">+ Time</button>
+            <button onclick="delProject('${p.id}')" style="background: #dc3545;">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('entries').innerHTML = entries.map(e => `
+        <tr>
+          <td>${e.date_worked}</td>
+          <td>${e.project_id}</td>
+          <td><strong>${e.hours}h</strong></td>
+          <td>${e.notes || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function addProject() {
+      const name = document.getElementById('newProj').value;
+      if (!name) return alert('Enter name');
+      const p = { id: Date.now(), name, status: 'Planned' };
+      projects.push(p);
+      if (localStorage.getItem('testMode')) {
+        localStorage.setItem('projects', JSON.stringify(projects));
+      } else if (db) {
+        await db.from('ssa_projects').insert([{name, status: 'Planned', year: 2026}]);
+      }
+      document.getElementById('newProj').value = '';
+      loadData();
+    }
+
+    function logTime(projId) {
+      const hours = prompt('Hours:');
+      const date = prompt('Date (YYYY-MM-DD):');
+      if (hours && date) {
+        const e = { id: Date.now(), project_id: projId, hours: parseFloat(hours), date_worked: date };
+        entries.push(e);
+        if (localStorage.getItem('testMode')) {
+          localStorage.setItem('entries', JSON.stringify(entries));
+        }
+        loadData();
+      }
+    }
+
+    function delProject(id) {
+      projects = projects.filter(p => p.id != id);
+      if (localStorage.getItem('testMode')) {
+        localStorage.setItem('projects', JSON.stringify(projects));
+      }
+      loadData();
+    }
+
+    function exportCSV() {
+      let csv = 'Project,Status,Hours\n';
+      projects.forEach(p => {
+        const hours = entries.filter(e => e.project_id == p.id).reduce((s, e) => s + e.hours, 0);
+        csv += `"${p.name}","${p.status}",${hours}\n`;
+      });
+      const blob = new Blob([csv], {type: 'text/csv'});
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'projects.csv';
+      link.click();
+    }
+
     function logout() {
-      db.auth.signOut();
+      localStorage.removeItem('testMode');
       location.reload();
     }
 
