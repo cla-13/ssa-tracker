@@ -18,25 +18,25 @@ button.secondary:hover { background: #5a6268; }
 .auth-box h2 { text-align: center; margin-bottom: 30px; color: #333; }
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 6px; color: #333; font-weight: 500; font-size: 14px; }
-    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
     .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
 .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
 .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .stat-card h3 { font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 10px; }
-@@ -33,24 +41,28 @@
+@@ -41,28 +33,24 @@
 .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #e3f2fd; color: #1976d2; margin-right: 8px; }
 .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #cfe2ff; color: #084298; }
 .project-meta { font-size: 13px; color: #666; margin: 12px 0; }
-    .project-actions { display: flex; gap: 8px; margin-top: 15px; }
-    .project-actions button { flex: 1; padding: 8px; font-size: 12px; }
     .project-actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
     .project-actions button { flex: 1; min-width: 80px; padding: 8px; font-size: 12px; }
+    .project-actions { display: flex; gap: 8px; margin-top: 15px; }
+    .project-actions button { flex: 1; padding: 8px; font-size: 12px; }
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
 .modal.active { display: flex; }
 .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
 .modal-header { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #333; }
-    .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
     .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+    .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
 .hidden { display: none; }
 .empty-state { text-align: center; padding: 40px 20px; color: #999; }
     table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 20px; }
@@ -57,7 +57,7 @@ button.secondary:hover { background: #5a6268; }
 <div style="margin-bottom: 30px;">
 <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Supabase Connection</h3>
 <div class="form-group">
-@@ -63,9 +75,7 @@ <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Supabase Connecti
+@@ -75,7 +63,9 @@ <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Supabase Connecti
 </div>
 <button onclick="connectSupabase()" style="width: 100%;">Connect</button>
 </div>
@@ -67,7 +67,7 @@ button.secondary:hover { background: #5a6268; }
 <div>
 <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Sign In</h3>
 <div class="form-group">
-@@ -78,11 +88,16 @@ <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Sign In</h3>
+@@ -88,16 +78,11 @@ <h3 style="font-size: 14px; margin-bottom: 15px; color: #666;">Sign In</h3>
 </div>
 </div>
 
@@ -75,7 +75,6 @@ button.secondary:hover { background: #5a6268; }
 <div id="mainApp" class="hidden">
 <header>
 <h1>📊 Project Tracker</h1>
-        <button class="secondary" onclick="logout()">Logout</button>
         <div class="header-right">
           <div class="live-indicator" id="liveIndicator">
             <div class="dot"></div>
@@ -83,10 +82,11 @@ button.secondary:hover { background: #5a6268; }
           </div>
           <button class="secondary" onclick="logout()">Logout</button>
         </div>
+        <button class="secondary" onclick="logout()">Logout</button>
 </header>
 
 <div class="dashboard">
-@@ -107,13 +122,18 @@ <h3>Completed</h3>
+@@ -122,18 +107,13 @@ <h3>Completed</h3>
 </select>
 <input type="text" id="searchBox" placeholder="Search projects..." onkeyup="loadProjects()" style="flex: 1; min-width: 200px;">
 <button onclick="showProjectModal()">+ New Project</button>
@@ -106,7 +106,7 @@ button.secondary:hover { background: #5a6268; }
 <div id="projectModal" class="modal">
 <div class="modal-content">
 <div class="modal-header">Create Project</div>
-@@ -145,6 +165,10 @@ <h3>Completed</h3>
+@@ -165,10 +145,6 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 <label>Due Date</label>
 <input type="date" id="projDueDate">
 </div>
@@ -117,7 +117,7 @@ button.secondary:hover { background: #5a6268; }
 <div class="form-group">
 <label>Notes</label>
 <textarea id="projNotes"></textarea>
-@@ -157,7 +181,6 @@ <h3>Completed</h3>
+@@ -181,6 +157,7 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 </div>
 </div>
 
@@ -125,7 +125,7 @@ button.secondary:hover { background: #5a6268; }
 <div id="timeModal" class="modal">
 <div class="modal-content">
 <div class="modal-header">Log Time</div>
-@@ -182,10 +205,59 @@ <h3>Completed</h3>
+@@ -205,59 +182,10 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 </div>
 </div>
 
@@ -185,7 +185,7 @@ let currentProjectId = null;
 
 function connectSupabase() {
 const url = document.getElementById('projectUrl').value.trim();
-@@ -229,6 +301,7 @@ <h3>Completed</h3>
+@@ -301,7 +229,6 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 if (data.session) {
 user = data.session.user.email;
 showApp();
@@ -193,7 +193,7 @@ showApp();
 loadProjects();
 }
 }
-@@ -239,16 +312,28 @@ <h3>Completed</h3>
+@@ -312,28 +239,16 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 document.getElementById('mainApp').classList.remove('hidden');
 }
 
@@ -217,15 +217,15 @@ const search = document.getElementById('searchBox').value.toLowerCase();
 
 const { data: projects } = await db.from('ssa_projects').select('*').eq('year', year);
 const { data: times } = await db.from('ssa_time_entries').select('*');
+      let filtered = (projects || []).filter(p => p.name.toLowerCase().includes(search) || (p.collaborators && p.collaborators.toLowerCase().includes(search)));
 
       let filtered = (projects || []).filter(p => p.name.toLowerCase().includes(search));
-      let filtered = (projects || []).filter(p => p.name.toLowerCase().includes(search) || (p.collaborators && p.collaborators.toLowerCase().includes(search)));
 renderProjects(filtered, times || []);
       renderTimeEntries(times || []);
 updateStats(filtered, times || []);
 }
 
-@@ -258,12 +343,10 @@ <h3>Completed</h3>
+@@ -343,10 +258,12 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">No projects</div>';
 return;
 }
@@ -238,7 +238,7 @@ const progress = p.target_hours ? Math.min((totalHours / p.target_hours) * 100, 
 return `
          <div class="project-card">
            <div class="project-title">${p.name}</div>
-@@ -272,17 +355,53 @@ <h3>Completed</h3>
+@@ -355,53 +272,17 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
            <div class="project-meta">
              ${p.due_date ? `<div>Due: ${new Date(p.due_date).toLocaleDateString()}</div>` : ''}
              ${p.target_hours ? `<div>Target: ${p.target_hours}h | Logged: ${totalHours.toFixed(1)}h</div>` : ''}
@@ -292,7 +292,7 @@ return `
 function updateStats(projects, times) {
 document.getElementById('statProjects').textContent = projects.length;
 document.getElementById('statHours').textContent = times.reduce((s, t) => s + t.hours, 0).toFixed(1);
-@@ -297,6 +416,7 @@ <h3>Completed</h3>
+@@ -416,7 +297,6 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 document.getElementById('projTargetHours').value = '';
 document.getElementById('projDueDate').value = '';
 document.getElementById('projNotes').value = '';
@@ -300,7 +300,7 @@ document.getElementById('projNotes').value = '';
 openModal('projectModal');
 }
 
-@@ -308,18 +428,17 @@ <h3>Completed</h3>
+@@ -428,17 +308,18 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 async function saveProject(e) {
 e.preventDefault();
 if (!db) return;
@@ -320,7 +320,7 @@ created_by: user
 try {
 if (currentProjectId) {
 await db.from('ssa_projects').update(data).eq('id', currentProjectId);
-@@ -333,6 +452,21 @@ <h3>Completed</h3>
+@@ -452,21 +333,6 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 }
 }
 
@@ -342,7 +342,7 @@ await db.from('ssa_projects').update(data).eq('id', currentProjectId);
 function showTimeModal(projectId) {
 currentProjectId = projectId;
 document.getElementById('timeHours').value = '';
-@@ -344,7 +478,6 @@ <h3>Completed</h3>
+@@ -478,6 +344,7 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 async function saveTimeEntry(e) {
 e.preventDefault();
 if (!db) return;
@@ -350,7 +350,7 @@ if (!db) return;
 try {
 await db.from('ssa_time_entries').insert([{
 project_id: currentProjectId,
-@@ -360,6 +493,97 @@ <h3>Completed</h3>
+@@ -493,97 +360,6 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 }
 }
 
@@ -448,12 +448,12 @@ project_id: currentProjectId,
 function openModal(id) {
 document.getElementById(id).classList.add('active');
 }
-@@ -378,10 +602,11 @@ <h3>Completed</h3>
+@@ -602,11 +378,10 @@ <h2 style="color: #333; margin-bottom: 20px;">📅 Time Entries by Day</h2>
 init();
 window.addEventListener('load', async () => {
 if (db) {
-        const { data } = await db.auth.onAuthStateChange((event, session) => {
         db.auth.onAuthStateChange((event, session) => {
+        const { data } = await db.auth.onAuthStateChange((event, session) => {
 if (session) {
 user = session.user.email;
 showApp();
