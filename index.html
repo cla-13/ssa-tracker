@@ -4,223 +4,388 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Project Tracker</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 20px; }
-    .auth { max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 8px; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    
+    /* Auth Screen */
+    .auth-screen { max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 8px; }
+    .auth-screen h2 { margin-bottom: 30px; color: #333; }
     .form-group { margin-bottom: 15px; }
-    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    label { display: block; margin-bottom: 6px; font-weight: 500; color: #333; }
+    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
     button { width: 100%; padding: 10px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
     button:hover { background: #5568d3; }
-    .test { background: #28a745; }
-    .test:hover { background: #218838; }
-    .app { display: none; max-width: 1200px; margin: 0 auto; color: white; }
-    .app.show { display: block; }
+    button.test { background: #28a745; margin-top: 20px; }
+    button.test:hover { background: #218838; }
+    
+    /* App Screen */
+    .app-screen { display: none; }
+    .app-screen.active { display: block; }
+    
     header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-    h1 { color: #667eea; margin: 0; }
-    .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; }
-    .controls input { flex: 1; }
-    .controls button { flex: 0 1 150px; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; color: #333; }
-    th { background: #f5f5f5; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }
+    header h1 { color: #667eea; font-size: 24px; }
+    header button { width: auto; padding: 8px 16px; }
+    
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab-btn { padding: 10px 20px; background: white; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .tab-btn.active { background: #667eea; color: white; border-color: #667eea; }
+    .tab-btn:hover { background: #f0f0f0; }
+    .tab-btn.active:hover { background: #667eea; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Projects Tab */
+    .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .controls input { flex: 1; min-width: 200px; }
+    .controls button { flex: 0 1 auto; }
+    
+    .projects-table { background: white; border-radius: 8px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f5f5f5; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600; }
     td { padding: 12px; border-bottom: 1px solid #eee; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px; }
-    .card { background: white; padding: 20px; border-radius: 8px; color: #333; }
-    .card h3 { margin-bottom: 10px; }
-    .card .actions { display: flex; gap: 8px; margin-top: 15px; }
-    .card .actions button { padding: 8px; font-size: 12px; }
-    hr { margin: 20px 0; border: none; border-top: 1px solid rgba(255,255,255,0.2); }
+    tr:hover { background: #f9f9f9; }
+    .actions { display: flex; gap: 8px; }
+    .actions button { padding: 6px 12px; font-size: 12px; min-width: 60px; }
+    .danger { background: #dc3545; }
+    .danger:hover { background: #c82333; }
+    .secondary { background: #6c757d; }
+    .secondary:hover { background: #5a6268; }
+    
+    /* Time Entries Tab */
+    .time-form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    .time-form .form-group { margin-bottom: 15px; }
+    .time-form input, .time-form select { width: 100%; }
+    .time-form textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 80px; }
+    
+    .time-entries { background: white; border-radius: 8px; overflow: hidden; }
+    .time-entries table { width: 100%; }
+    
+    .empty { text-align: center; padding: 40px 20px; color: #999; }
+    
+    /* Modal */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal.show { display: flex; }
+    .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+    .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
   </style>
 </head>
 <body>
-  <div id="auth" class="auth">
+  <!-- Auth Screen -->
+  <div id="authScreen" class="auth-screen">
     <h2>Project Tracker</h2>
     <div class="form-group">
-      <label>Project URL</label>
-      <input type="text" id="url" placeholder="https://xxx.supabase.co">
-    </div>
-    <div class="form-group">
-      <label>Anon Key</label>
-      <input type="password" id="key" placeholder="sb_publishable_...">
-    </div>
-    <button onclick="connect()">Connect</button>
-    
-    <hr>
-    
-    <div class="form-group">
       <label>Email</label>
-      <input type="email" id="email" placeholder="your@email.com">
+      <input type="email" id="email" placeholder="your.email@company.com">
     </div>
-    <button onclick="login()">Send Magic Link</button>
-    
-    <hr>
-    
-    <button class="test" onclick="testMode()">🧪 Enter Test Mode</button>
+    <button onclick="login()">Login</button>
+    <button class="test" onclick="testMode()">🧪 Test Mode</button>
   </div>
 
-  <div id="app" class="app">
-    <header>
-      <h1>📊 Project Tracker</h1>
-      <button onclick="logout()">Logout</button>
-    </header>
-    
-    <div class="controls">
-      <input type="text" id="newProj" placeholder="Project name...">
-      <button onclick="addProject()">+ Project</button>
-      <button onclick="exportCSV()">📥 Export</button>
+  <!-- App Screen -->
+  <div id="appScreen" class="app-screen">
+    <div class="container">
+      <header>
+        <h1>📊 Project Tracker</h1>
+        <button onclick="logout()">Logout</button>
+      </header>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('projects')">📋 Projects</button>
+        <button class="tab-btn" onclick="switchTab('time')">⏱️ Time Entries</button>
+      </div>
+
+      <!-- Projects Tab -->
+      <div id="projects" class="tab-content active">
+        <div class="controls">
+          <input type="text" id="projName" placeholder="Project name...">
+          <select id="projStatus">
+            <option value="Planned">Planned</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <input type="number" id="projTarget" placeholder="Target hours" step="0.5">
+          <button onclick="addProject()">+ New Project</button>
+          <button onclick="exportCSV()">📥 Export CSV</button>
+        </div>
+
+        <div class="projects-table" id="projectsList"></div>
+      </div>
+
+      <!-- Time Tab -->
+      <div id="time" class="tab-content">
+        <div class="time-form">
+          <h3 style="margin-bottom: 15px;">Log Time</h3>
+          <div class="form-group">
+            <label>Project *</label>
+            <select id="timeProject" required></select>
+          </div>
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="timeDate" required>
+          </div>
+          <div class="form-group">
+            <label>Hours *</label>
+            <input type="number" id="timeHours" step="0.25" required>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="timeNotes"></textarea>
+          </div>
+          <button onclick="logTime()" style="width: auto; padding: 10px 30px;">Save Time Entry</button>
+        </div>
+
+        <div class="time-entries" id="timeList"></div>
+      </div>
     </div>
+  </div>
 
-    <div id="projects" class="grid"></div>
-
-    <h2>Time Entries</h2>
-    <table>
-      <thead><tr><th>Date</th><th>Project</th><th>Hours</th><th>Notes</th></tr></thead>
-      <tbody id="entries"></tbody>
-    </table>
+  <!-- Edit Project Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Edit Project</div>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="editName">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="editStatus">
+          <option value="Planned">Planned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Target Hours</label>
+        <input type="number" id="editTarget" step="0.5">
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('editModal')">Cancel</button>
+        <button onclick="saveEdit()">Save</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    let db = null;
+    let user = null;
+    let currentEditId = null;
     let projects = [];
-    let entries = [];
+    let timeEntries = [];
 
-    function connect() {
-      const url = document.getElementById('url').value;
-      const key = document.getElementById('key').value;
-      if (url && key) {
-        db = supabase.createClient(url, key);
-        localStorage.setItem('sb', JSON.stringify({url, key}));
-        alert('Connected!');
-      }
-    }
+    const allowedDelete = ['c.delossantos@elsevier.com', 'y.mejala@elsevier.com', 'k.lamkins@elsevier.com'];
 
-    async function login() {
-      if (!db) return alert('Connect first');
-      const email = document.getElementById('email').value;
-      try {
-        await db.auth.signInWithOtp({email});
-        alert('Check your email!');
-      } catch (err) {
-        alert('Error: ' + err.message);
+    function login() {
+      const email = document.getElementById('email').value.trim();
+      if (!email) {
+        alert('Enter your email');
+        return;
       }
+      user = email;
+      localStorage.setItem('user', user);
+      loadData();
+      showApp();
     }
 
     function testMode() {
+      user = 'test@test.com';
       localStorage.setItem('testMode', 'true');
-      showApp();
       loadData();
-    }
-
-    async function init() {
-      if (localStorage.getItem('testMode')) {
-        showApp();
-        loadData();
-        return;
-      }
-      const saved = localStorage.getItem('sb');
-      if (saved) {
-        const {url, key} = JSON.parse(saved);
-        db = supabase.createClient(url, key);
-        const {data} = await db.auth.getSession();
-        if (data.session) {
-          showApp();
-          loadData();
-        }
-      }
+      showApp();
     }
 
     function showApp() {
-      document.getElementById('auth').style.display = 'none';
-      document.getElementById('app').classList.add('show');
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appScreen').classList.add('active');
     }
 
-    async function loadData() {
-      if (localStorage.getItem('testMode')) {
-        projects = JSON.parse(localStorage.getItem('projects') || '[]');
-        entries = JSON.parse(localStorage.getItem('entries') || '[]');
-      } else if (db) {
-        const {data: p} = await db.from('ssa_projects').select('*');
-        const {data: e} = await db.from('ssa_time_entries').select('*');
-        projects = p || [];
-        entries = e || [];
-      }
+    function logout() {
+      user = null;
+      localStorage.removeItem('user');
+      localStorage.removeItem('testMode');
+      location.reload();
+    }
+
+    function loadData() {
+      projects = JSON.parse(localStorage.getItem('projects') || '[]');
+      timeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
       render();
     }
 
+    function saveData() {
+      localStorage.setItem('projects', JSON.stringify(projects));
+      localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+      loadData();
+    }
+
     function render() {
-      document.getElementById('projects').innerHTML = projects.map(p => `
-        <div class="card">
-          <h3>${p.name}</h3>
-          <p style="font-size: 12px; margin: 5px 0;">Status: ${p.status}</p>
-          <div class="actions">
-            <button onclick="logTime('${p.id}')">+ Time</button>
-            <button onclick="delProject('${p.id}')" style="background: #dc3545;">Delete</button>
-          </div>
-        </div>
-      `).join('');
-
-      document.getElementById('entries').innerHTML = entries.map(e => `
-        <tr>
-          <td>${e.date_worked}</td>
-          <td>${e.project_id}</td>
-          <td><strong>${e.hours}h</strong></td>
-          <td>${e.notes || '-'}</td>
-        </tr>
-      `).join('');
+      renderProjects();
+      renderTimeEntries();
+      updateProjectSelect();
     }
 
-    async function addProject() {
-      const name = document.getElementById('newProj').value;
-      if (!name) return alert('Enter name');
-      const p = { id: Date.now(), name, status: 'Planned' };
-      projects.push(p);
-      if (localStorage.getItem('testMode')) {
-        localStorage.setItem('projects', JSON.stringify(projects));
-      } else if (db) {
-        await db.from('ssa_projects').insert([{name, status: 'Planned', year: 2026}]);
+    function renderProjects() {
+      const list = document.getElementById('projectsList');
+      if (!projects.length) {
+        list.innerHTML = '<div class="empty">No projects yet</div>';
+        return;
       }
-      document.getElementById('newProj').value = '';
-      loadData();
+      let html = '<table><thead><tr><th>Name</th><th>Status</th><th>Target</th><th>Logged</th><th>Actions</th></tr></thead><tbody>';
+      projects.forEach(p => {
+        const logged = timeEntries.filter(t => t.projectId === p.id).reduce((s, t) => s + t.hours, 0);
+        html += `<tr>
+          <td>${p.name}</td>
+          <td>${p.status}</td>
+          <td>${p.target || '-'}h</td>
+          <td>${logged.toFixed(1)}h</td>
+          <td class="actions">
+            <button onclick="editProject('${p.id}')">Edit</button>
+            ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProject('${p.id}')">Delete</button>` : ''}
+          </td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      list.innerHTML = html;
     }
 
-    function logTime(projId) {
-      const hours = prompt('Hours:');
-      const date = prompt('Date (YYYY-MM-DD):');
-      if (hours && date) {
-        const e = { id: Date.now(), project_id: projId, hours: parseFloat(hours), date_worked: date };
-        entries.push(e);
-        if (localStorage.getItem('testMode')) {
-          localStorage.setItem('entries', JSON.stringify(entries));
-        }
-        loadData();
+    function renderTimeEntries() {
+      const list = document.getElementById('timeList');
+      if (!timeEntries.length) {
+        list.innerHTML = '<div class="empty">No time entries yet</div>';
+        return;
       }
+      const sorted = [...timeEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
+      let html = '<table><thead><tr><th>Date</th><th>Project</th><th>Hours</th><th>Notes</th></tr></thead><tbody>';
+      sorted.forEach(t => {
+        const proj = projects.find(p => p.id === t.projectId);
+        html += `<tr>
+          <td>${t.date}</td>
+          <td>${proj?.name || 'Unknown'}</td>
+          <td><strong>${t.hours}h</strong></td>
+          <td>${t.notes || '-'}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      list.innerHTML = html;
     }
 
-    function delProject(id) {
-      projects = projects.filter(p => p.id != id);
-      if (localStorage.getItem('testMode')) {
-        localStorage.setItem('projects', JSON.stringify(projects));
+    function updateProjectSelect() {
+      const select = document.getElementById('timeProject');
+      select.innerHTML = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    function addProject() {
+      const name = document.getElementById('projName').value.trim();
+      const status = document.getElementById('projStatus').value;
+      const target = parseFloat(document.getElementById('projTarget').value) || null;
+      if (!name) {
+        alert('Enter project name');
+        return;
       }
-      loadData();
+      projects.push({ id: Date.now().toString(), name, status, target, createdBy: user });
+      document.getElementById('projName').value = '';
+      document.getElementById('projTarget').value = '';
+      saveData();
+    }
+
+    function editProject(id) {
+      const proj = projects.find(p => p.id === id);
+      if (!proj) return;
+      currentEditId = id;
+      document.getElementById('editName').value = proj.name;
+      document.getElementById('editStatus').value = proj.status;
+      document.getElementById('editTarget').value = proj.target || '';
+      openModal('editModal');
+    }
+
+    function saveEdit() {
+      const proj = projects.find(p => p.id === currentEditId);
+      if (!proj) return;
+      proj.name = document.getElementById('editName').value;
+      proj.status = document.getElementById('editStatus').value;
+      proj.target = parseFloat(document.getElementById('editTarget').value) || null;
+      saveData();
+      closeModal('editModal');
+    }
+
+    function deleteProject(id) {
+      if (!allowedDelete.includes(user)) {
+        alert('No permission to delete');
+        return;
+      }
+      if (!confirm('Delete project?')) return;
+      projects = projects.filter(p => p.id !== id);
+      timeEntries = timeEntries.filter(t => t.projectId !== id);
+      saveData();
+    }
+
+    function logTime() {
+      const projId = document.getElementById('timeProject').value;
+      const date = document.getElementById('timeDate').value;
+      const hours = parseFloat(document.getElementById('timeHours').value);
+      const notes = document.getElementById('timeNotes').value;
+      if (!projId || !date || !hours) {
+        alert('Fill required fields');
+        return;
+      }
+
+      // Check for existing entry same day
+      const existing = timeEntries.find(t => t.projectId === projId && t.date === date);
+      if (existing) {
+        existing.hours += hours;
+        existing.notes = (existing.notes ? existing.notes + '; ' : '') + notes;
+      } else {
+        timeEntries.push({ id: Date.now().toString(), projectId: projId, date, hours, notes, loggedBy: user });
+      }
+
+      document.getElementById('timeHours').value = '';
+      document.getElementById('timeNotes').value = '';
+      saveData();
     }
 
     function exportCSV() {
-      let csv = 'Project,Status,Hours\n';
+      let csv = 'Project,Status,Target Hours,Logged Hours\n';
       projects.forEach(p => {
-        const hours = entries.filter(e => e.project_id == p.id).reduce((s, e) => s + e.hours, 0);
-        csv += `"${p.name}","${p.status}",${hours}\n`;
+        const logged = timeEntries.filter(t => t.projectId === p.id).reduce((s, t) => s + t.hours, 0);
+        csv += `"${p.name}","${p.status}","${p.target || 0}","${logged.toFixed(1)}"\n`;
       });
-      const blob = new Blob([csv], {type: 'text/csv'});
+      const blob = new Blob([csv], { type: 'text/csv' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = 'projects.csv';
       link.click();
     }
 
-    function logout() {
-      localStorage.removeItem('testMode');
-      location.reload();
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('show');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+
+    function init() {
+      const saved = localStorage.getItem('user');
+      if (saved) {
+        user = saved;
+        loadData();
+        showApp();
+      } else if (localStorage.getItem('testMode')) {
+        user = 'test@test.com';
+        loadData();
+        showApp();
+      }
+      document.getElementById('timeDate').valueAsDate = new Date();
     }
 
     init();
