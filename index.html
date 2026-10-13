@@ -99,7 +99,7 @@
       <input type="email" id="email" placeholder="your.email@company.com">
     </div>
     <button onclick="login()">Login</button>
-    <button class="test" onclick="testMode()">🧪 Test Mode</button>
+    <button class="test" onclick="enterTestMode()">🧪 Test Mode</button>
   </div>
 
   <!-- App Screen -->
@@ -267,7 +267,7 @@
       showApp();
     }
 
-    function testMode() {
+    function enterTestMode() {
       testMode = true;
       user = 'test@test.com';
       localStorage.setItem('testMode', 'true');
@@ -484,7 +484,7 @@
       const entries = timeEntries.filter(t => t.project_id == id);
       if (entries.length) {
         document.getElementById('timeLogDisplay').style.display = 'block';
-        document.getElementById('timeLogList').innerHTML = entries.map(e => 
+        document.getElementById('timeLogList').innerHTML = entries.map(e =>
           `<div class="time-entry">${e.date_worked}: ${e.hours}h ${e.notes ? '- ' + e.notes : ''}</div>`
         ).join('');
       } else {
