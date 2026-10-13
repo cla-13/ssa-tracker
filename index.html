@@ -38,11 +38,15 @@
     .tab-content.active { display: block; }
     
     /* Projects Tab */
-    .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .controls input { flex: 1; min-width: 200px; }
-    .controls button { flex: 0 1 auto; }
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .project-card { background: white; padding: 20px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .project-card h3 { margin-bottom: 10px; color: #667eea; }
+    .project-card .meta { font-size: 12px; color: #666; margin: 8px 0; }
+    .project-card .actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+    .project-card .actions button { padding: 8px 12px; font-size: 12px; flex: 1; min-width: 60px; }
     
-    .projects-table { background: white; border-radius: 8px; overflow: hidden; }
+    /* Overview Tab */
+    .overview-table { background: white; border-radius: 8px; overflow: hidden; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #f5f5f5; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600; }
     td { padding: 12px; border-bottom: 1px solid #eee; }
@@ -54,15 +58,6 @@
     .secondary { background: #6c757d; }
     .secondary:hover { background: #5a6268; }
     
-    /* Time Entries Tab */
-    .time-form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    .time-form .form-group { margin-bottom: 15px; }
-    .time-form input, .time-form select { width: 100%; }
-    .time-form textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 80px; }
-    
-    .time-entries { background: white; border-radius: 8px; overflow: hidden; }
-    .time-entries table { width: 100%; }
-    
     .empty { text-align: center; padding: 40px 20px; color: #999; }
     
     /* Modal */
@@ -71,6 +66,10 @@
     .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
     .modal-header { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
     .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+    
+    .time-log { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+    .time-log h4 { margin-bottom: 10px; color: #333; }
+    .time-entry { background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 5px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -95,84 +94,111 @@
 
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('projects')">📋 Projects</button>
-        <button class="tab-btn" onclick="switchTab('time')">⏱️ Time Entries</button>
+        <button class="tab-btn" onclick="switchTab('overview')">📊 Overview</button>
       </div>
 
       <!-- Projects Tab -->
       <div id="projects" class="tab-content active">
-        <div class="controls">
-          <input type="text" id="projName" placeholder="Project name...">
-          <select id="projStatus">
-            <option value="Planned">Planned</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Completed">Completed</option>
-          </select>
-          <input type="number" id="projTarget" placeholder="Target hours" step="0.5">
-          <button onclick="addProject()">+ New Project</button>
-          <button onclick="exportCSV()">📥 Export CSV</button>
-        </div>
-
-        <div class="projects-table" id="projectsList"></div>
+        <button onclick="openModal('newProjectModal')" style="margin-bottom: 20px;">+ New Project</button>
+        <div class="projects-grid" id="projectsList"></div>
       </div>
 
-      <!-- Time Tab -->
-      <div id="time" class="tab-content">
-        <div class="time-form">
-          <h3 style="margin-bottom: 15px;">Log Time</h3>
-          <div class="form-group">
-            <label>Project *</label>
-            <select id="timeProject" required></select>
-          </div>
-          <div class="form-group">
-            <label>Date *</label>
-            <input type="date" id="timeDate" required>
-          </div>
-          <div class="form-group">
-            <label>Hours *</label>
-            <input type="number" id="timeHours" step="0.25" required>
-          </div>
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea id="timeNotes"></textarea>
-          </div>
-          <button onclick="logTime()" style="width: auto; padding: 10px 30px;">Save Time Entry</button>
-        </div>
-
-        <div class="time-entries" id="timeList"></div>
+      <!-- Overview Tab -->
+      <div id="overview" class="tab-content">
+        <div class="overview-table" id="overviewList"></div>
       </div>
     </div>
   </div>
 
-  <!-- Edit Project Modal -->
-  <div id="editModal" class="modal">
+  <!-- New Project Modal -->
+  <div id="newProjectModal" class="modal">
     <div class="modal-content">
-      <div class="modal-header">Edit Project</div>
+      <div class="modal-header">Create New Project</div>
       <div class="form-group">
-        <label>Name</label>
-        <input type="text" id="editName">
+        <label>Project Name *</label>
+        <input type="text" id="newProjName" required>
       </div>
       <div class="form-group">
         <label>Status</label>
-        <select id="editStatus">
+        <select id="newProjStatus">
           <option value="Planned">Planned</option>
           <option value="In Progress">In Progress</option>
           <option value="Completed">Completed</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Target Hours</label>
-        <input type="number" id="editTarget" step="0.5">
+        <label>Collaborators (comma separated, optional)</label>
+        <input type="text" id="newProjCollaborators" placeholder="email1@company.com, email2@company.com">
       </div>
       <div class="modal-footer">
-        <button class="secondary" onclick="closeModal('editModal')">Cancel</button>
-        <button onclick="saveEdit()">Save</button>
+        <button class="secondary" onclick="closeModal('newProjectModal')">Cancel</button>
+        <button onclick="addProject()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div id="editProjectModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Edit Project</div>
+      <div class="form-group">
+        <label>Project Name</label>
+        <input type="text" id="editProjName">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="editProjStatus">
+          <option value="Planned">Planned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Creator</label>
+        <input type="text" id="editProjCreator" readonly style="background: #f5f5f5;">
+      </div>
+      <div class="form-group">
+        <label>Collaborators (comma separated, optional)</label>
+        <input type="text" id="editProjCollaborators" placeholder="email1@company.com, email2@company.com">
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('editProjectModal')">Cancel</button>
+        <button class="danger" onclick="deleteProject()" style="margin-right: auto;">Delete</button>
+        <button onclick="saveProject()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Entry Modal -->
+  <div id="timeEntryModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Log Time</div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="logDate" required>
+      </div>
+      <div class="form-group">
+        <label>Hours *</label>
+        <input type="number" id="logHours" step="0.25" required>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="logNotes" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
+      </div>
+      <div id="timeLogDisplay" class="time-log" style="display: none;">
+        <h4>Previous entries:</h4>
+        <div id="timeLogList"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('timeEntryModal')">Cancel</button>
+        <button onclick="logTime()">Save Entry</button>
       </div>
     </div>
   </div>
 
   <script>
     let user = null;
-    let currentEditId = null;
+    let currentProjectId = null;
     let projects = [];
     let timeEntries = [];
 
@@ -218,32 +244,58 @@
     function saveData() {
       localStorage.setItem('projects', JSON.stringify(projects));
       localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
-      loadData();
+      render();
     }
 
     function render() {
       renderProjects();
-      renderTimeEntries();
-      updateProjectSelect();
+      renderOverview();
     }
 
     function renderProjects() {
       const list = document.getElementById('projectsList');
       if (!projects.length) {
+        list.innerHTML = '<div class="empty" style="grid-column: 1/-1;">No projects yet</div>';
+        return;
+      }
+      list.innerHTML = projects.map(p => {
+        const entries = timeEntries.filter(t => t.projectId === p.id);
+        const totalHours = entries.reduce((s, t) => s + t.hours, 0);
+        return `
+          <div class="project-card">
+            <h3>${p.name}</h3>
+            <div class="meta">Status: ${p.status}</div>
+            <div class="meta">Total Hours: ${totalHours.toFixed(1)}h</div>
+            <div class="meta">Creator: ${p.creator}</div>
+            ${p.collaborators ? `<div class="meta">Team: ${p.collaborators}</div>` : ''}
+            <div class="actions">
+              <button onclick="openTimeEntry('${p.id}')">⏱️ Log Time</button>
+              <button class="secondary" onclick="openEditProject('${p.id}')">✏️ Edit</button>
+              ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">🗑️ Delete</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderOverview() {
+      const list = document.getElementById('overviewList');
+      if (!projects.length) {
         list.innerHTML = '<div class="empty">No projects yet</div>';
         return;
       }
-      let html = '<table><thead><tr><th>Name</th><th>Status</th><th>Target</th><th>Logged</th><th>Actions</th></tr></thead><tbody>';
+      let html = '<table><thead><tr><th>Project</th><th>Status</th><th>Creator</th><th>Hours</th><th>Actions</th></tr></thead><tbody>';
       projects.forEach(p => {
-        const logged = timeEntries.filter(t => t.projectId === p.id).reduce((s, t) => s + t.hours, 0);
+        const hours = timeEntries.filter(t => t.projectId === p.id).reduce((s, t) => s + t.hours, 0);
         html += `<tr>
           <td>${p.name}</td>
           <td>${p.status}</td>
-          <td>${p.target || '-'}h</td>
-          <td>${logged.toFixed(1)}h</td>
+          <td>${p.creator}</td>
+          <td>${hours.toFixed(1)}h</td>
           <td class="actions">
-            <button onclick="editProject('${p.id}')">Edit</button>
-            ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProject('${p.id}')">Delete</button>` : ''}
+            <button onclick="openTimeEntry('${p.id}')">Log</button>
+            <button class="secondary" onclick="openEditProject('${p.id}')">Edit</button>
+            ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">Delete</button>` : ''}
           </td>
         </tr>`;
       });
@@ -251,106 +303,108 @@
       list.innerHTML = html;
     }
 
-    function renderTimeEntries() {
-      const list = document.getElementById('timeList');
-      if (!timeEntries.length) {
-        list.innerHTML = '<div class="empty">No time entries yet</div>';
-        return;
-      }
-      const sorted = [...timeEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
-      let html = '<table><thead><tr><th>Date</th><th>Project</th><th>Hours</th><th>Notes</th></tr></thead><tbody>';
-      sorted.forEach(t => {
-        const proj = projects.find(p => p.id === t.projectId);
-        html += `<tr>
-          <td>${t.date}</td>
-          <td>${proj?.name || 'Unknown'}</td>
-          <td><strong>${t.hours}h</strong></td>
-          <td>${t.notes || '-'}</td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-      list.innerHTML = html;
-    }
-
-    function updateProjectSelect() {
-      const select = document.getElementById('timeProject');
-      select.innerHTML = projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    }
-
     function addProject() {
-      const name = document.getElementById('projName').value.trim();
-      const status = document.getElementById('projStatus').value;
-      const target = parseFloat(document.getElementById('projTarget').value) || null;
+      const name = document.getElementById('newProjName').value.trim();
+      const status = document.getElementById('newProjStatus').value;
+      const collaborators = document.getElementById('newProjCollaborators').value.trim();
       if (!name) {
         alert('Enter project name');
         return;
       }
-      projects.push({ id: Date.now().toString(), name, status, target, createdBy: user });
-      document.getElementById('projName').value = '';
-      document.getElementById('projTarget').value = '';
+      projects.push({ id: Date.now().toString(), name, status, creator: user, collaborators });
+      document.getElementById('newProjName').value = '';
+      document.getElementById('newProjCollaborators').value = '';
       saveData();
+      closeModal('newProjectModal');
     }
 
-    function editProject(id) {
+    function openEditProject(id) {
       const proj = projects.find(p => p.id === id);
       if (!proj) return;
-      currentEditId = id;
-      document.getElementById('editName').value = proj.name;
-      document.getElementById('editStatus').value = proj.status;
-      document.getElementById('editTarget').value = proj.target || '';
-      openModal('editModal');
+      currentProjectId = id;
+      document.getElementById('editProjName').value = proj.name;
+      document.getElementById('editProjStatus').value = proj.status;
+      document.getElementById('editProjCreator').value = proj.creator;
+      document.getElementById('editProjCollaborators').value = proj.collaborators || '';
+      openModal('editProjectModal');
     }
 
-    function saveEdit() {
-      const proj = projects.find(p => p.id === currentEditId);
+    function saveProject() {
+      const proj = projects.find(p => p.id === currentProjectId);
       if (!proj) return;
-      proj.name = document.getElementById('editName').value;
-      proj.status = document.getElementById('editStatus').value;
-      proj.target = parseFloat(document.getElementById('editTarget').value) || null;
+      proj.name = document.getElementById('editProjName').value;
+      proj.status = document.getElementById('editProjStatus').value;
+      proj.collaborators = document.getElementById('editProjCollaborators').value;
       saveData();
-      closeModal('editModal');
+      closeModal('editProjectModal');
     }
 
-    function deleteProject(id) {
+    function deleteProject() {
       if (!allowedDelete.includes(user)) {
-        alert('No permission to delete');
+        alert('No permission');
         return;
       }
-      if (!confirm('Delete project?')) return;
+      if (!confirm('Delete project and all time entries?')) return;
+      deleteProjectDirect(currentProjectId);
+      closeModal('editProjectModal');
+    }
+
+    function deleteProjectDirect(id) {
+      if (!allowedDelete.includes(user)) {
+        alert('No permission');
+        return;
+      }
+      if (!confirm('Delete?')) return;
       projects = projects.filter(p => p.id !== id);
       timeEntries = timeEntries.filter(t => t.projectId !== id);
       saveData();
     }
 
+    function openTimeEntry(id) {
+      currentProjectId = id;
+      document.getElementById('logDate').valueAsDate = new Date();
+      document.getElementById('logHours').value = '';
+      document.getElementById('logNotes').value = '';
+      
+      const entries = timeEntries.filter(t => t.projectId === id);
+      if (entries.length) {
+        document.getElementById('timeLogDisplay').style.display = 'block';
+        document.getElementById('timeLogList').innerHTML = entries.map(e => 
+          `<div class="time-entry">${e.date}: ${e.hours}h ${e.notes ? '- ' + e.notes : ''}</div>`
+        ).join('');
+      } else {
+        document.getElementById('timeLogDisplay').style.display = 'none';
+      }
+      
+      openModal('timeEntryModal');
+    }
+
     function logTime() {
-      const projId = document.getElementById('timeProject').value;
-      const date = document.getElementById('timeDate').value;
-      const hours = parseFloat(document.getElementById('timeHours').value);
-      const notes = document.getElementById('timeNotes').value;
-      if (!projId || !date || !hours) {
+      const date = document.getElementById('logDate').value;
+      const hours = parseFloat(document.getElementById('logHours').value);
+      const notes = document.getElementById('logNotes').value;
+      if (!date || !hours) {
         alert('Fill required fields');
         return;
       }
 
-      // Check for existing entry same day
-      const existing = timeEntries.find(t => t.projectId === projId && t.date === date);
+      const existing = timeEntries.find(t => t.projectId === currentProjectId && t.date === date);
       if (existing) {
         existing.hours += hours;
         existing.notes = (existing.notes ? existing.notes + '; ' : '') + notes;
       } else {
-        timeEntries.push({ id: Date.now().toString(), projectId: projId, date, hours, notes, loggedBy: user });
+        timeEntries.push({ id: Date.now().toString(), projectId: currentProjectId, date, hours, notes, loggedBy: user });
       }
-
-      document.getElementById('timeHours').value = '';
-      document.getElementById('timeNotes').value = '';
+      
       saveData();
+      closeModal('timeEntryModal');
     }
 
     function exportCSV() {
-      let csv = 'Project,Status,Target Hours,Logged Hours\n';
+      let csv = 'Project,Status,Creator,Total Hours\n';
       projects.forEach(p => {
-        const logged = timeEntries.filter(t => t.projectId === p.id).reduce((s, t) => s + t.hours, 0);
-        csv += `"${p.name}","${p.status}","${p.target || 0}","${logged.toFixed(1)}"\n`;
+        const hours = timeEntries.filter(t => t.projectId === p.id).reduce((s, t) => s + t.hours, 0);
+        csv += `"${p.name}","${p.status}","${p.creator}","${hours.toFixed(1)}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const link = document.createElement('a');
@@ -385,8 +439,12 @@
         loadData();
         showApp();
       }
-      document.getElementById('timeDate').valueAsDate = new Date();
     }
+
+    // Real-time sync across tabs
+    window.addEventListener('storage', () => {
+      if (user) loadData();
+    });
 
     init();
   </script>
