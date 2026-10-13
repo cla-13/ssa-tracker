@@ -103,4 +103,476 @@
   </div>
 
   <!-- App Screen -->
-  <div id="appScreen"
+  <div id="appScreen" class="app-screen">
+    <div class="container">
+      <header>
+        <h1>📊 Project Tracker</h1>
+        <div class="controls">
+          <div class="live-status">
+            <div class="live-dot" id="liveDot"></div>
+            <span id="liveText">Connecting...</span>
+          </div>
+          <button onclick="logout()">Logout</button>
+        </div>
+      </header>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('projects')">📋 Projects</button>
+        <button class="tab-btn" onclick="switchTab('overview')">📊 Overview</button>
+      </div>
+
+      <!-- Projects Tab -->
+      <div id="projects" class="tab-content active">
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+          <button onclick="openModal('newProjectModal')">+ New Project</button>
+          <button onclick="exportAllCSV()" style="background: #6c757d;">📥 Export All</button>
+        </div>
+        <div class="projects-grid" id="projectsList"></div>
+      </div>
+
+      <!-- Overview Tab -->
+      <div id="overview" class="tab-content">
+        <div style="margin-bottom: 20px;">
+          <button onclick="exportAllCSV()" style="background: #6c757d;">📥 Export All</button>
+        </div>
+        <div class="overview-table" id="overviewList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Project Modal -->
+  <div id="newProjectModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Create New Project</div>
+      <div class="form-group">
+        <label>Project Name *</label>
+        <input type="text" id="newProjName" required>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="newProjStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="Planned">Planned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Collaborators (comma separated, optional)</label>
+        <input type="text" id="newProjCollaborators" placeholder="email1@company.com, email2@company.com">
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('newProjectModal')">Cancel</button>
+        <button onclick="addProject()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div id="editProjectModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Edit Project</div>
+      <div class="form-group">
+        <label>Project Name</label>
+        <input type="text" id="editProjName">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="editProjStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="Planned">Planned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Creator</label>
+        <input type="text" id="editProjCreator" readonly style="background: #f5f5f5;">
+      </div>
+      <div class="form-group">
+        <label>Collaborators (comma separated, optional)</label>
+        <input type="text" id="editProjCollaborators" placeholder="email1@company.com, email2@company.com">
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('editProjectModal')">Cancel</button>
+        <button class="danger" id="deleteBtn" onclick="deleteProject()" style="margin-right: auto;">Delete</button>
+        <button onclick="saveProject()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Entry Modal -->
+  <div id="timeEntryModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">Log Time</div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="logDate" required>
+      </div>
+      <div class="form-group">
+        <label>Hours *</label>
+        <input type="number" id="logHours" step="0.25" required>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="logNotes" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
+      </div>
+      <div id="timeLogDisplay" class="time-log" style="display: none;">
+        <h4>Previous entries:</h4>
+        <div id="timeLogList"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('timeEntryModal')">Cancel</button>
+        <button onclick="logTime()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let db = null;
+    let user = null;
+    let currentProjectId = null;
+    let projects = [];
+    let timeEntries = [];
+    let subscription = null;
+    let testMode = false;
+
+    const allowedDelete = ['c.delossantos@elsevier.com', 'y.mejala@elsevier.com', 'k.lamkins@elsevier.com'];
+
+    function connectSupabase() {
+      const url = document.getElementById('projectUrl').value.trim();
+      const key = document.getElementById('anonKey').value.trim();
+      if (!url || !key) {
+        document.getElementById('connMsg').textContent = 'Enter URL and key';
+        document.getElementById('connMsg').style.color = '#dc3545';
+        return;
+      }
+      db = window.supabase.createClient(url, key);
+      localStorage.setItem('sbConfig', JSON.stringify({ url, key }));
+      document.getElementById('connMsg').textContent = 'Connected! Now login.';
+      document.getElementById('connMsg').style.color = '#28a745';
+    }
+
+    function login() {
+      const email = document.getElementById('email').value.trim();
+      if (!email) {
+        alert('Enter your email');
+        return;
+      }
+      if (!db) {
+        alert('Connect to Supabase first');
+        return;
+      }
+      user = email;
+      localStorage.setItem('user', user);
+      loadData();
+      showApp();
+    }
+
+    function testMode() {
+      testMode = true;
+      user = 'test@test.com';
+      localStorage.setItem('testMode', 'true');
+      loadData();
+      showApp();
+    }
+
+    function showApp() {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appScreen').classList.add('active');
+      setupRealtime();
+    }
+
+    function logout() {
+      user = null;
+      testMode = false;
+      localStorage.removeItem('user');
+      localStorage.removeItem('testMode');
+      if (subscription) subscription.unsubscribe();
+      location.reload();
+    }
+
+    async function loadData() {
+      if (testMode) {
+        projects = JSON.parse(localStorage.getItem('projects') || '[]');
+        timeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
+      } else if (db) {
+        try {
+          const { data: p } = await db.from('ssa_projects').select('*');
+          const { data: t } = await db.from('ssa_time_entries').select('*');
+          projects = p || [];
+          timeEntries = t || [];
+        } catch (err) {
+          console.error('Error loading data:', err);
+        }
+      }
+      render();
+    }
+
+    function saveData() {
+      if (testMode) {
+        localStorage.setItem('projects', JSON.stringify(projects));
+        localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+      }
+      render();
+    }
+
+    function setupRealtime() {
+      if (testMode) {
+        document.getElementById('liveDot').classList.add('active');
+        document.getElementById('liveText').textContent = 'Test Mode';
+        window.addEventListener('storage', () => loadData());
+        return;
+      }
+      if (!db) return;
+      if (subscription) subscription.unsubscribe();
+      subscription = db.channel('changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_projects' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_time_entries' }, () => loadData())
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            document.getElementById('liveDot').classList.add('active');
+            document.getElementById('liveText').textContent = 'Live updates on';
+          }
+        });
+    }
+
+    function render() {
+      renderProjects();
+      renderOverview();
+    }
+
+    function renderProjects() {
+      const list = document.getElementById('projectsList');
+      if (!projects.length) {
+        list.innerHTML = '<div class="empty" style="grid-column: 1/-1;">No projects yet</div>';
+        return;
+      }
+      list.innerHTML = projects.map(p => {
+        const entries = timeEntries.filter(t => t.project_id === p.id);
+        const totalHours = entries.reduce((s, t) => s + t.hours, 0);
+        return `
+          <div class="project-card">
+            <h3>${p.name}</h3>
+            <div class="meta">Status: ${p.status}</div>
+            <div class="meta">Total Hours: ${totalHours.toFixed(1)}h</div>
+            <div class="meta">Creator: ${p.created_by}</div>
+            ${p.collaborators ? `<div class="meta">Team: ${p.collaborators}</div>` : ''}
+            <div class="actions">
+              <button onclick="openTimeEntry('${p.id}')">⏱️ Log Time</button>
+              <button class="secondary" onclick="openEditProject('${p.id}')">✏️ Edit</button>
+              ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">🗑️ Delete</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderOverview() {
+      const list = document.getElementById('overviewList');
+      if (!projects.length) {
+        list.innerHTML = '<div class="empty">No projects yet</div>';
+        return;
+      }
+      let html = '<table><thead><tr><th>Project</th><th>Status</th><th>Creator</th><th>Hours</th><th>Actions</th></tr></thead><tbody>';
+      projects.forEach(p => {
+        const hours = timeEntries.filter(t => t.project_id === p.id).reduce((s, t) => s + t.hours, 0);
+        html += `<tr>
+          <td>${p.name}</td>
+          <td>${p.status}</td>
+          <td>${p.created_by}</td>
+          <td>${hours.toFixed(1)}h</td>
+          <td class="actions">
+            <button onclick="openTimeEntry('${p.id}')">Log</button>
+            <button class="secondary" onclick="openEditProject('${p.id}')">Edit</button>
+            ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">Delete</button>` : ''}
+          </td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      list.innerHTML = html;
+    }
+
+    async function addProject() {
+      const name = document.getElementById('newProjName').value.trim();
+      const status = document.getElementById('newProjStatus').value;
+      const collaborators = document.getElementById('newProjCollaborators').value.trim();
+      if (!name) {
+        alert('Enter project name');
+        return;
+      }
+      const newProj = { id: Date.now(), name, status, created_by: user, collaborators };
+      projects.push(newProj);
+      if (testMode) {
+        saveData();
+      } else if (db) {
+        try {
+          await db.from('ssa_projects').insert([newProj]);
+        } catch (err) {
+          alert('Error: ' + err.message);
+          projects.pop();
+        }
+      }
+      document.getElementById('newProjName').value = '';
+      document.getElementById('newProjCollaborators').value = '';
+      closeModal('newProjectModal');
+    }
+
+    function openEditProject(id) {
+      const proj = projects.find(p => p.id == id);
+      if (!proj) return;
+      currentProjectId = id;
+      document.getElementById('editProjName').value = proj.name;
+      document.getElementById('editProjStatus').value = proj.status;
+      document.getElementById('editProjCreator').value = proj.created_by;
+      document.getElementById('editProjCollaborators').value = proj.collaborators || '';
+      document.getElementById('deleteBtn').style.display = allowedDelete.includes(user) ? 'block' : 'none';
+      openModal('editProjectModal');
+    }
+
+    async function saveProject() {
+      const proj = projects.find(p => p.id == currentProjectId);
+      if (!proj) return;
+      proj.name = document.getElementById('editProjName').value;
+      proj.status = document.getElementById('editProjStatus').value;
+      proj.collaborators = document.getElementById('editProjCollaborators').value;
+      if (testMode) {
+        saveData();
+      } else if (db) {
+        try {
+          await db.from('ssa_projects').update(proj).eq('id', proj.id);
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+      closeModal('editProjectModal');
+    }
+
+    function deleteProject() {
+      if (!allowedDelete.includes(user)) {
+        alert('No permission');
+        return;
+      }
+      if (!confirm('Delete project and all time entries?')) return;
+      deleteProjectDirect(currentProjectId);
+      closeModal('editProjectModal');
+    }
+
+    async function deleteProjectDirect(id) {
+      if (!allowedDelete.includes(user)) {
+        alert('No permission');
+        return;
+      }
+      if (!confirm('Delete?')) return;
+      projects = projects.filter(p => p.id != id);
+      timeEntries = timeEntries.filter(t => t.project_id != id);
+      if (testMode) {
+        saveData();
+      } else if (db) {
+        try {
+          await db.from('ssa_time_entries').delete().eq('project_id', id);
+          await db.from('ssa_projects').delete().eq('id', id);
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+    }
+
+    function openTimeEntry(id) {
+      currentProjectId = id;
+      document.getElementById('logDate').valueAsDate = new Date();
+      document.getElementById('logHours').value = '';
+      document.getElementById('logNotes').value = '';
+      const entries = timeEntries.filter(t => t.project_id == id);
+      if (entries.length) {
+        document.getElementById('timeLogDisplay').style.display = 'block';
+        document.getElementById('timeLogList').innerHTML = entries.map(e => 
+          `<div class="time-entry">${e.date_worked}: ${e.hours}h ${e.notes ? '- ' + e.notes : ''}</div>`
+        ).join('');
+      } else {
+        document.getElementById('timeLogDisplay').style.display = 'none';
+      }
+      openModal('timeEntryModal');
+    }
+
+    async function logTime() {
+      const date = document.getElementById('logDate').value;
+      const hours = parseFloat(document.getElementById('logHours').value);
+      const notes = document.getElementById('logNotes').value;
+      if (!date || !hours) {
+        alert('Fill required fields');
+        return;
+      }
+      const existing = timeEntries.find(t => t.project_id == currentProjectId && t.date_worked === date);
+      if (existing) {
+        existing.hours += hours;
+        existing.notes = (existing.notes ? existing.notes + '; ' : '') + notes;
+      } else {
+        timeEntries.push({ id: Date.now(), project_id: currentProjectId, date_worked: date, hours, notes, logged_by: user });
+      }
+      if (testMode) {
+        saveData();
+      } else if (db) {
+        try {
+          if (existing) {
+            await db.from('ssa_time_entries').update(existing).eq('id', existing.id);
+          } else {
+            await db.from('ssa_time_entries').insert([timeEntries[timeEntries.length - 1]]);
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+      closeModal('timeEntryModal');
+    }
+
+    function exportAllCSV() {
+      let csv = 'Project,Status,Creator,Total Hours\n';
+      projects.forEach(p => {
+        const hours = timeEntries.filter(t => t.project_id == p.id).reduce((s, t) => s + t.hours, 0);
+        csv += `"${p.name}","${p.status}","${p.created_by}","${hours.toFixed(1)}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'projects.csv';
+      link.click();
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('show');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+
+    function init() {
+      const saved = localStorage.getItem('sbConfig');
+      if (saved) {
+        const { url, key } = JSON.parse(saved);
+        db = window.supabase.createClient(url, key);
+      }
+      const savedUser = localStorage.getItem('user');
+      const savedTestMode = localStorage.getItem('testMode');
+      if (savedTestMode) {
+        testMode = true;
+        user = 'test@test.com';
+        loadData();
+        showApp();
+      } else if (savedUser) {
+        user = savedUser;
+        loadData();
+        showApp();
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
