@@ -149,16 +149,24 @@
         <input type="text" id="newProjName" required>
       </div>
       <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="newProjCreatorName" required placeholder="Your name">
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="newProjDate" required>
+      </div>
+      <div class="form-group">
+        <label>Due Date (optional)</label>
+        <input type="date" id="newProjDueDate">
+      </div>
+      <div class="form-group">
         <label>Status</label>
         <select id="newProjStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
           <option value="Planned">Planned</option>
           <option value="In Progress">In Progress</option>
           <option value="Completed">Completed</option>
         </select>
-      </div>
-      <div class="form-group">
-        <label>Creator</label>
-        <input type="text" id="newProjCreator" readonly style="background: #f5f5f5;">
       </div>
       <div class="form-group">
         <label>Collaborators (comma separated, optional)</label>
@@ -357,8 +365,10 @@
           <div class="project-card">
             <h3>${p.name}</h3>
             <div class="meta">Status: ${p.status}</div>
+            <div class="meta">Creator: ${p.creator_name || p.created_by}</div>
+            <div class="meta">Date: ${p.project_date || 'N/A'}</div>
+            ${p.due_date ? `<div class="meta">Due: ${p.due_date}</div>` : ''}
             <div class="meta">Total Hours: ${totalHours.toFixed(1)}h</div>
-            <div class="meta">Creator: ${p.created_by}</div>
             ${p.collaborators ? `<div class="meta">Team: ${p.collaborators}</div>` : ''}
             <div class="actions">
               <button onclick="openTimeEntry('${p.id}')">⏱️ Log Time</button>
@@ -377,13 +387,17 @@
         list.innerHTML = '<div class="empty">No projects yet</div>';
         return;
       }
-      let html = '<table><thead><tr><th>Project</th><th>Status</th><th>Creator</th><th>Hours</th><th>Actions</th></tr></thead><tbody>';
+      let html = '<table><thead><tr><th>Project</th><th>Status</th><th>Creator</th><th>Date</th><th>Due Date</th><th>Hours</th><th>Actions</th></tr></thead><tbody>';
+      let totalHoursAll = 0;
       projects.forEach(p => {
         const hours = timeEntries.filter(t => t.project_id === p.id).reduce((s, t) => s + t.hours, 0);
+        totalHoursAll += hours;
         html += `<tr>
           <td>${p.name}</td>
           <td>${p.status}</td>
-          <td>${p.created_by}</td>
+          <td>${p.creator_name || p.created_by}</td>
+          <td>${p.project_date || 'N/A'}</td>
+          <td>${p.due_date || '-'}</td>
           <td>${hours.toFixed(1)}h</td>
           <td class="actions">
             <button onclick="openTimeEntry('${p.id}')">Log</button>
@@ -393,27 +407,37 @@
           </td>
         </tr>`;
       });
+      html += `<tr style="background: #667eea; color: white; font-weight: bold;">
+        <td colspan="5">TOTAL HOURS</td>
+        <td>${totalHoursAll.toFixed(1)}h</td>
+        <td></td>
+      </tr>`;
       html += '</tbody></table>';
       list.innerHTML = html;
     }
 
     function openCreateProjectModal() {
       document.getElementById('newProjName').value = '';
+      document.getElementById('newProjCreatorName').value = '';
+      document.getElementById('newProjDate').valueAsDate = new Date();
+      document.getElementById('newProjDueDate').value = '';
       document.getElementById('newProjStatus').value = 'Planned';
-      document.getElementById('newProjCreator').value = user;
       document.getElementById('newProjCollaborators').value = '';
       openModal('newProjectModal');
     }
 
     async function addProject() {
       const name = document.getElementById('newProjName').value.trim();
+      const creator_name = document.getElementById('newProjCreatorName').value.trim();
+      const project_date = document.getElementById('newProjDate').value;
+      const due_date = document.getElementById('newProjDueDate').value || null;
       const status = document.getElementById('newProjStatus').value;
       const collaborators = document.getElementById('newProjCollaborators').value.trim() || null;
-      if (!name) {
-        alert('Enter project name');
+      if (!name || !creator_name || !project_date) {
+        alert('Fill in required fields');
         return;
       }
-      const newProj = { id: Date.now(), name, status, created_by: user, collaborators };
+      const newProj = { id: Date.now(), name, status, created_by: user, creator_name, project_date, due_date, collaborators };
       projects.push(newProj);
       if (testMode) {
         saveData();
@@ -543,11 +567,14 @@
     }
 
     function exportAllCSV() {
-      let csv = 'Project,Status,Creator,Total Hours\n';
+      let csv = 'Project,Status,Creator,Date,Due Date,Total Hours\n';
+      let totalHoursAll = 0;
       projects.forEach(p => {
         const hours = timeEntries.filter(t => t.project_id == p.id).reduce((s, t) => s + t.hours, 0);
-        csv += `"${p.name}","${p.status}","${p.created_by}","${hours.toFixed(1)}"\n`;
+        totalHoursAll += hours;
+        csv += `"${p.name}","${p.status}","${p.creator_name || p.created_by}","${p.project_date || ''}","${p.due_date || ''}","${hours.toFixed(1)}"\n`;
       });
+      csv += `\nTOTAL HOURS,,,,,${totalHoursAll.toFixed(1)}\n`;
       const blob = new Blob([csv], { type: 'text/csv' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
