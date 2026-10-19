@@ -629,8 +629,9 @@
     function editTimeEntry(id) {
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
-      const emailMatches = entry.logged_by_email && entry.logged_by_email.toLowerCase() === user.toLowerCase();
-      const nameMatches = entry.logged_by && entry.logged_by.toLowerCase() === user.toLowerCase();
+      const emailMatches = entry.logged_by_email && entry.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase();
+      const nameMatches = entry.logged_by && entry.logged_by.trim().toLowerCase() === user.trim().toLowerCase();
+      console.log('Edit check:', { isAdmin, emailMatches, nameMatches, entryEmail: entry.logged_by_email, entryName: entry.logged_by, user });
       if (!isAdmin && !emailMatches && !nameMatches) {
         alert('Only the person who logged this entry or admins can edit it');
         return;
@@ -648,8 +649,9 @@
       id = parseInt(id);
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
-      const emailMatches = entry.logged_by_email && entry.logged_by_email.toLowerCase() === user.toLowerCase();
-      const nameMatches = entry.logged_by && entry.logged_by.toLowerCase() === user.toLowerCase();
+      const emailMatches = entry.logged_by_email && entry.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase();
+      const nameMatches = entry.logged_by && entry.logged_by.trim().toLowerCase() === user.trim().toLowerCase();
+      console.log('Delete check:', { isAdmin, emailMatches, nameMatches, entryEmail: entry.logged_by_email, entryName: entry.logged_by, user });
       if (!isAdmin && !emailMatches && !nameMatches) {
         alert('Only the person who logged this entry or admins can delete it');
         return;
