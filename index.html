@@ -10,6 +10,8 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 20px; }
     .container { max-width: 1400px; margin: 0 auto; }
+
+    /* Auth Screen */
     .auth-screen { max-width: 400px; margin: 100px auto; background: white; padding: 40px; border-radius: 8px; }
     .auth-screen h2 { margin-bottom: 30px; color: #333; }
     .form-group { margin-bottom: 15px; }
@@ -20,8 +22,11 @@
     button.test { background: #28a745; margin-top: 20px; }
     button.test:hover { background: #218838; }
     .error { color: #dc3545; font-size: 12px; margin-top: 5px; }
+
+    /* App Screen */
     .app-screen { display: none; }
     .app-screen.active { display: block; }
+
     header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
     header h1 { color: #667eea; font-size: 24px; }
     header .controls { display: flex; gap: 10px; align-items: center; }
@@ -31,19 +36,25 @@
     .live-dot.active { background: #28a745; }
     .user-info { font-size: 13px; color: #666; }
     .admin-badge { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+
     .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
     .tab-btn { padding: 10px 20px; background: white; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; font-weight: bold; }
     .tab-btn.active { background: #667eea; color: white; border-color: #667eea; }
     .tab-btn:hover { background: #f0f0f0; }
     .tab-btn.active:hover { background: #667eea; }
+
     .tab-content { display: none; }
     .tab-content.active { display: block; }
+
+    /* Projects Tab */
     .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
     .project-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .project-card h3 { margin-bottom: 10px; color: #667eea; }
     .project-card .meta { font-size: 12px; color: #666; margin: 8px 0; }
     .project-card .actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
     .project-card .actions button { padding: 8px 12px; font-size: 12px; flex: 1; min-width: 60px; }
+
+    /* Overview Tab */
     .overview-table { background: white; border-radius: 8px; overflow: hidden; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #f5f5f5; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600; }
@@ -55,12 +66,16 @@
     .danger:hover { background: #c82333; }
     .secondary { background: #6c757d; }
     .secondary:hover { background: #5a6268; }
+
     .empty { text-align: center; padding: 40px 20px; color: #999; }
+
+    /* Modal */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
     .modal.show { display: flex; }
     .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
     .modal-header { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
     .modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
     .time-log { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
     .time-log h4 { margin-bottom: 10px; color: #333; }
     .time-entry { background: #f9f9f9; padding: 10px; border-radius: 4px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -70,115 +85,799 @@
   </style>
 </head>
 <body>
+  <!-- Auth Screen -->
   <div id="authScreen" class="auth-screen">
     <h2>Project Tracker</h2>
-    <div class="form-group"><label>Project URL</label><input type="text" id="projectUrl" placeholder="https://xxx.supabase.co"></div>
-    <div class="form-group"><label>Anon Key</label><input type="password" id="anonKey" placeholder="sb_publishable_..."></div>
+    <div class="form-group">
+      <label>Project URL</label>
+      <input type="text" id="projectUrl" placeholder="https://xxx.supabase.co">
+    </div>
+    <div class="form-group">
+      <label>Anon Key</label>
+      <input type="password" id="anonKey" placeholder="sb_publishable_...">
+    </div>
     <button onclick="connectSupabase()">Connect Supabase</button>
     <p id="connMsg" style="margin-top: 10px; font-size: 12px;"></p>
+
     <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-    <div class="form-group"><label>Email</label><input type="email" id="email" placeholder="your.email@elsevier.com"><div id="emailError" class="error" style="display: none;"></div></div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="your.email@elsevier.com">
+      <div id="emailError" class="error" style="display: none;"></div>
+    </div>
     <button onclick="login()">Login</button>
     <button class="test" onclick="enterTestMode()">🧪 Test Mode</button>
   </div>
 
+  <!-- App Screen -->
   <div id="appScreen" class="app-screen">
     <div class="container">
       <header>
         <h1>📊 Project Tracker</h1>
         <div class="controls">
-          <div class="user-info"><span id="userDisplay"></span><span id="adminBadge" class="admin-badge" style="display: none; margin-left: 8px;">ADMIN</span></div>
-          <div class="live-status"><div class="live-dot" id="liveDot"></div><span id="liveText">Connecting...</span></div>
+          <div class="user-info">
+            <span id="userDisplay"></span>
+            <span id="adminBadge" class="admin-badge" style="display: none; margin-left: 8px;">ADMIN</span>
+          </div>
+          <div class="live-status">
+            <div class="live-dot" id="liveDot"></div>
+            <span id="liveText">Connecting...</span>
+          </div>
           <button onclick="logout()">Logout</button>
         </div>
       </header>
+
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('projects')">📋 Projects</button>
         <button class="tab-btn" onclick="switchTab('overview')">📊 Overview</button>
       </div>
+
+      <!-- Projects Tab -->
       <div id="projects" class="tab-content active">
-        <div style="margin-bottom: 20px; display: flex; gap: 10px;"><button onclick="openCreateProjectModal()">+ New Project</button><button onclick="exportAllCSV()" style="background: #6c757d;">📥 Export All</button></div>
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+          <button onclick="openCreateProjectModal()">+ New Project</button>
+          <button onclick="exportAllCSV()" style="background: #6c757d;">📥 Export All</button>
+        </div>
         <div class="projects-grid" id="projectsList"></div>
       </div>
+
+      <!-- Overview Tab -->
       <div id="overview" class="tab-content">
-        <div style="margin-bottom: 20px;"><button onclick="exportAllCSV()" style="background: #6c757d;">📥 Export All</button></div>
+        <div style="margin-bottom: 20px;">
+          <button onclick="exportAllCSV()" style="background: #6c757d;">📥 Export All</button>
+        </div>
         <div class="overview-table" id="overviewList"></div>
       </div>
     </div>
   </div>
 
+  <!-- New Project Modal -->
   <div id="newProjectModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">Create New Project</div>
-      <div class="form-group"><label>Project Name *</label><input type="text" id="newProjName" required></div>
-      <div class="form-group"><label>Name *</label><input type="text" id="newProjCreatorName" required placeholder="Your name"></div>
-      <div class="form-group"><label>Date *</label><input type="date" id="newProjDate" required></div>
-      <div class="form-group"><label>Due Date (optional)</label><input type="date" id="newProjDueDate"></div>
-      <div class="form-group"><label>Status</label><select id="newProjStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"><option value="Planned">Planned</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option></select></div>
-      <div class="form-group"><label>Collaborators (comma separated, optional)</label><input type="text" id="newProjCollaborators" placeholder="email1@elsevier.com, email2@elsevier.com"></div>
-      <div class="modal-footer"><button class="secondary" onclick="closeModal('newProjectModal')">Cancel</button><button onclick="addProject()">Create</button></div>
+      <div class="form-group">
+        <label>Project Name *</label>
+        <input type="text" id="newProjName" required>
+      </div>
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="newProjCreatorName" required placeholder="Your name">
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="newProjDate" required>
+      </div>
+      <div class="form-group">
+        <label>Due Date (optional)</label>
+        <input type="date" id="newProjDueDate">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="newProjStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="Planned">Planned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Collaborators (comma separated, optional)</label>
+        <input type="text" id="newProjCollaborators" placeholder="email1@elsevier.com, email2@elsevier.com">
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('newProjectModal')">Cancel</button>
+        <button onclick="addProject()">Create</button>
+      </div>
     </div>
   </div>
 
+  <!-- Edit Project Modal -->
   <div id="editProjectModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">Edit Project</div>
-      <div class="form-group"><label>Project Name</label><input type="text" id="editProjName"></div>
-      <div class="form-group"><label>Status</label><select id="editProjStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"><option value="Planned">Planned</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option></select></div>
-      <div class="form-group"><label>Creator</label><input type="text" id="editProjCreator" readonly style="background: #f5f5f5;"></div>
-      <div class="form-group"><label>Date</label><input type="date" id="editProjDate"></div>
-      <div class="form-group"><label>Due Date (optional)</label><input type="date" id="editProjDueDate"></div>
-      <div class="form-group"><label>Collaborators (comma separated, optional)</label><input type="text" id="editProjCollaborators" placeholder="email1@elsevier.com, email2@elsevier.com"></div>
-      <div class="modal-footer"><button class="secondary" onclick="closeModal('editProjectModal')">Cancel</button><button class="danger" id="deleteBtn" onclick="deleteProject()" style="margin-right: auto;">Delete</button><button onclick="saveProject()">Save</button></div>
+      <div class="form-group">
+        <label>Project Name</label>
+        <input type="text" id="editProjName">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="editProjStatus" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="Planned">Planned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Creator</label>
+        <input type="text" id="editProjCreator" readonly style="background: #f5f5f5;">
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="editProjDate">
+      </div>
+      <div class="form-group">
+        <label>Due Date (optional)</label>
+        <input type="date" id="editProjDueDate">
+      </div>
+      <div class="form-group">
+        <label>Collaborators (comma separated, optional)</label>
+        <input type="text" id="editProjCollaborators" placeholder="email1@elsevier.com, email2@elsevier.com">
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('editProjectModal')">Cancel</button>
+        <button class="danger" id="deleteBtn" onclick="deleteProject()" style="margin-right: auto;">Delete</button>
+        <button onclick="saveProject()">Save</button>
+      </div>
     </div>
   </div>
 
+  <!-- Time Entry Modal (Add/Edit) -->
   <div id="timeEntryModal" class="modal">
     <div class="modal-content">
       <div class="modal-header" id="timeEntryModalHeader">Log Time</div>
-      <div class="form-group"><label>Your Full Name *</label><input type="text" id="loggerName" required placeholder="Your name for this entry"></div>
-      <div class="form-group"><label>Date *</label><input type="date" id="logDate" required></div>
-      <div class="form-group"><label>Hours *</label><input type="number" id="logHours" step="0.25" required></div>
-      <div class="form-group"><label>Notes</label><textarea id="logNotes" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea></div>
-      <div id="timeLogDisplay" class="time-log" style="display: none;"><h4>Previous entries:</h4><div id="timeLogList"></div></div>
-      <div class="modal-footer"><button class="secondary" onclick="closeModal('timeEntryModal')">Cancel</button><button id="timeEntryDeleteBtn" class="danger" onclick="deleteCurrentTimeEntry()" style="display: none; margin-right: auto;">Delete</button><button onclick="logTime()">Save Entry</button></div>
+      <div class="form-group">
+        <label>Your Full Name *</label>
+        <input type="text" id="loggerName" required placeholder="Your name for this entry">
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="logDate" required>
+      </div>
+      <div class="form-group">
+        <label>Hours *</label>
+        <input type="number" id="logHours" step="0.25" required>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="logNotes" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
+      </div>
+      <div id="timeLogDisplay" class="time-log" style="display: none;">
+        <h4>Previous entries:</h4>
+        <div id="timeLogList"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" onclick="closeModal('timeEntryModal')">Cancel</button>
+        <button id="timeEntryDeleteBtn" class="danger" onclick="deleteCurrentTimeEntry()" style="display: none; margin-right: auto;">Delete</button>
+        <button onclick="logTime()">Save Entry</button>
+      </div>
     </div>
   </div>
 
   <script>
-    let db = null, user = null, isAdmin = false, currentProjectId = null, currentEditingTimeEntryId = null, projects = [], timeEntries = [], subscription = null, testMode = false;
-    const adminEmails = ['c.delossantos@elsevier.com', 'kelly.lamkins@elsevier.com', 'y.mejala@elsevier.com'];
+    let db = null;
+    let user = null;
+    let isAdmin = false;
+    let currentProjectId = null;
+    let currentEditingTimeEntryId = null;
+    let projects = [];
+    let timeEntries = [];
+    let subscription = null;
+    let testMode = false;
 
-    function connectSupabase() { const url = document.getElementById('projectUrl').value.trim(), key = document.getElementById('anonKey').value.trim(); if (!url || !key) { document.getElementById('connMsg').textContent = 'Enter URL and key'; document.getElementById('connMsg').style.color = '#dc3545'; return; } db = window.supabase.createClient(url, key); localStorage.setItem('sbConfig', JSON.stringify({ url, key })); document.getElementById('connMsg').textContent = 'Connected! Now login.'; document.getElementById('connMsg').style.color = '#28a745'; }
-    function validateEmail(e) { return e.toLowerCase().endsWith('@elsevier.com'); }
-    function login() { const e = document.getElementById('email').value.trim(), t = document.getElementById('emailError'); if (!e) return t.textContent = 'Enter your email', t.style.display = 'block', void 0; if (!validateEmail(e)) return t.textContent = 'Only @elsevier.com emails are allowed', t.style.display = 'block', void 0; if (t.style.display = 'none', !db) return alert('Connect to Supabase first'), void 0; user = e; isAdmin = adminEmails.includes(e.toLowerCase()); localStorage.setItem('user', user); loadData(); showApp(); }
-    function enterTestMode() { testMode = true; user = 'test@test.com'; isAdmin = true; localStorage.setItem('testMode', 'true'); loadData(); showApp(); }
-    function showApp() { document.getElementById('authScreen').style.display = 'none'; document.getElementById('appScreen').classList.add('active'); document.getElementById('userDisplay').textContent = user; if (isAdmin) document.getElementById('adminBadge').style.display = 'inline'; setupRealtime(); }
-    function logout() { user = null; isAdmin = false; testMode = false; localStorage.removeItem('user'); localStorage.removeItem('testMode'); subscription && subscription.unsubscribe(); location.reload(); }
-    async function loadData() { if (testMode) projects = JSON.parse(localStorage.getItem('projects') || '[]'), timeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]'); else if (db) try { const { data: e } = await db.from('ssa_projects').select('*'), { data: t } = await db.from('ssa_time_entries').select('*'); projects = e || [], timeEntries = t || []; } catch (e) { console.error('Error loading data:', e); } render(); }
-    function saveData() { if (testMode) localStorage.setItem('projects', JSON.stringify(projects)), localStorage.setItem('timeEntries', JSON.stringify(timeEntries)); render(); }
-    function setupRealtime() { if (testMode) return document.getElementById('liveDot').classList.add('active'), document.getElementById('liveText').textContent = 'Test Mode', void window.addEventListener('storage', () => loadData()); db && (subscription && subscription.unsubscribe(), subscription = db.channel('changes').on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_projects' }, () => loadData()).on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_time_entries' }, () => loadData()).subscribe(e => { 'SUBSCRIBED' === e && (document.getElementById('liveDot').classList.add('active'), document.getElementById('liveText').textContent = 'Live updates on'); })); }
-    function render() { renderProjects(); renderOverview(); }
-    function renderProjects() { const e = document.getElementById('projectsList'); e.innerHTML = projects.length ? projects.map(t => { const r = timeEntries.filter(e => e.project_id === t.id), n = r.reduce((e, t) => e + t.hours, 0); return `<div class="project-card"><h3>${t.name}</h3><div class="meta">Status: ${t.status}</div><div class="meta">Creator: ${t.creator_name || t.created_by}</div><div class="meta">Date: ${t.project_date || 'N/A'}</div>${t.due_date ? `<div class="meta">Due: ${t.due_date}</div>` : ''}<div class="meta">Total Hours: ${n.toFixed(1)}h</div>${t.collaborators ? `<div class="meta">Team: ${t.collaborators}</div>` : ''}<div class="actions"><button onclick="openTimeEntry('${t.id}')">⏱️ Log Time</button><button class="secondary" onclick="openEditProject('${t.id}')">✏️ Edit</button><button class="secondary" onclick="exportProjectXLS('${t.id}')">📥 Export</button>${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${t.id}')">🗑️ Delete</button>` : ''}</div></div>`; }).join('') : '<div class="empty" style="grid-column: 1/-1;">No projects yet</div>'; }
-    function renderOverview() { const e = document.getElementById('overviewList'); e.innerHTML = projects.length ? (() => { let t = '<table><thead><tr><th>Project</th><th>Status</th><th>Creator</th><th>Date</th><th>Due Date</th><th>Hours</th><th>Actions</th></tr></thead><tbody>'; let r = 0; projects.forEach(n => { const o = timeEntries.filter(e => e.project_id === n.id).reduce((e, t) => e + t.hours, 0); r += o; t += `<tr><td>${n.name}</td><td>${n.status}</td><td>${n.creator_name || n.created_by}</td><td>${n.project_date || 'N/A'}</td><td>${n.due_date || '-'}</td><td>${o.toFixed(1)}h</td><td class="actions"><button onclick="openTimeEntry('${n.id}')">Log</button><button class="secondary" onclick="openEditProject('${n.id}')">Edit</button><button class="secondary" onclick="exportProjectXLS('${n.id}')">Export</button>${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${n.id}')">Delete</button>` : ''}</td></tr>`; }); return t + `<tr style="background: #667eea; color: white; font-weight: bold;"><td colspan="5">TOTAL HOURS</td><td>${r.toFixed(1)}h</td><td></td></tr></tbody></table>`; })() : '<div class="empty">No projects yet</div>'; }
-    function openCreateProjectModal() { document.getElementById('newProjName').value = ''; document.getElementById('newProjCreatorName').value = ''; document.getElementById('newProjDate').valueAsDate = new Date(); document.getElementById('newProjDueDate').value = ''; document.getElementById('newProjStatus').value = 'Planned'; document.getElementById('newProjCollaborators').value = ''; openModal('newProjectModal'); }
-    async function addProject() { const e = document.getElementById('newProjName').value.trim(), t = document.getElementById('newProjCreatorName').value.trim(), r = document.getElementById('newProjDate').value, n = document.getElementById('newProjDueDate').value || null, o = document.getElementById('newProjStatus').value, a = document.getElementById('newProjCollaborators').value.trim() || null; if (e && t && r) { const c = { id: Date.now(), name: e, status: o, created_by: user, creator_name: t, project_date: r, due_date: n, collaborators: a }; projects.push(c); if (testMode) saveData(), closeModal('newProjectModal'); else if (db) try { const { error: d } = await db.from('ssa_projects').insert([c]); d ? (alert('Error saving: ' + d.message), projects.pop()) : closeModal('newProjectModal'); } catch (e) { alert('Error: ' + e.message), projects.pop(); } } else alert('Fill in required fields'); }
-    function openEditProject(e) { const t = projects.find(t => t.id == e); t && (canAccessProject(e) ? (currentProjectId = e, document.getElementById('editProjName').value = t.name, document.getElementById('editProjStatus').value = t.status, document.getElementById('editProjCreator').value = t.created_by, document.getElementById('editProjDate').value = t.project_date || '', document.getElementById('editProjDueDate').value = t.due_date || '', document.getElementById('editProjCollaborators').value = t.collaborators || '', document.getElementById('deleteBtn').style.display = isAdmin ? 'block' : 'none', openModal('editProjectModal')) : alert('Only the project creator, collaborators, or admins can edit this project')); }
-    async function saveProject() { const e = projects.find(e => e.id == currentProjectId); e && (e.name = document.getElementById('editProjName').value, e.status = document.getElementById('editProjStatus').value, e.project_date = document.getElementById('editProjDate').value || null, e.due_date = document.getElementById('editProjDueDate').value || null, e.collaborators = document.getElementById('editProjCollaborators').value, testMode ? saveData() : db && await db.from('ssa_projects').update(e).eq('id', e.id).catch(e => alert('Error: ' + e.message)), closeModal('editProjectModal')); }
-    function deleteProject() { isAdmin ? confirm('Delete project and all time entries?') && (deleteProjectDirect(currentProjectId), closeModal('editProjectModal')) : alert('No permission'); }
-    async function deleteProjectDirect(e) { isAdmin ? confirm('Delete?') && (projects = projects.filter(t => t.id != e), timeEntries = timeEntries.filter(t => t.project_id != e), testMode ? saveData() : db && (await db.from('ssa_time_entries').delete().eq('project_id', e), await db.from('ssa_projects').delete().eq('id', e)).catch(e => alert('Error: ' + e.message))) : alert('No permission'); }
-    function canAccessProject(e) { const t = projects.find(t => t.id == e); return t ? isAdmin || t.created_by === user || (t.collaborators && t.collaborators.split(',').map(e => e.trim().toLowerCase()).includes(user.toLowerCase())) : !1; }
-    function openTimeEntry(e) { if (!canAccessProject(e)) return void alert('Only the project creator, collaborators, or admins can log time on this project'); currentProjectId = e, currentEditingTimeEntryId = null, document.getElementById('timeEntryModalHeader').textContent = 'Log Time', document.getElementById('loggerName').value = '', document.getElementById('logDate').valueAsDate = new Date(), document.getElementById('logHours').value = '', document.getElementById('logNotes').value = '', document.getElementById('timeEntryDeleteBtn').style.display = 'none'; const t = timeEntries.filter(t => t.project_id == e); t.length ? (document.getElementById('timeLogDisplay').style.display = 'block', document.getElementById('timeLogList').innerHTML = t.map(e => `<div class="time-entry"><div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div><div class="time-entry-actions"><button onclick="editTimeEntry('${e.id}')">Edit</button><button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button></div></div>`).join('')) : document.getElementById('timeLogDisplay').style.display = 'none', openModal('timeEntryModal'); }
-    function editTimeEntry(e) { const t = timeEntries.find(t => t.id == e); t && (isAdmin || t.logged_by_email && t.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase() || !t.logged_by_email ? (currentEditingTimeEntryId = e, document.getElementById('timeEntryModalHeader').textContent = 'Edit Time Entry', document.getElementById('loggerName').value = t.logged_by || '', document.getElementById('logDate').value = t.date_worked || '', document.getElementById('logHours').value = t.hours || '', document.getElementById('logNotes').value = t.notes || '', document.getElementById('timeEntryDeleteBtn').style.display = 'block') : alert('Only the person who logged this entry or admins can edit it')); }
-    async function removeTimeEntry(e) { e = parseInt(e); const t = timeEntries.find(t => t.id == e); t && (isAdmin || t.logged_by_email && t.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase() || !t.logged_by_email ? confirm('Delete this time entry?') && (testMode ? (timeEntries = timeEntries.filter(t => t.id != e), saveData()) : db && (await db.from('ssa_time_entries').delete().eq('id', e), await loadData()), (() => { const t = timeEntries.filter(t => t.project_id == currentProjectId); t.length ? (document.getElementById('timeLogDisplay').style.display = 'block', document.getElementById('timeLogList').innerHTML = t.map(e => `<div class="time-entry"><div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div><div class="time-entry-actions"><button onclick="editTimeEntry('${e.id}')">Edit</button><button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button></div></div>`).join('')) : document.getElementById('timeLogDisplay').style.display = 'none'; })()) : alert('Only the person who logged this entry or admins can delete it')); }
-    function deleteCurrentTimeEntry() { currentEditingTimeEntryId && removeTimeEntry(currentEditingTimeEntryId); }
-    async function logTime() { const e = document.getElementById('loggerName').value.trim(), t = document.getElementById('logDate').value, r = parseFloat(document.getElementById('logHours').value), n = document.getElementById('logNotes').value; if (e && t && r) { if (currentEditingTimeEntryId) { const o = timeEntries.find(t => t.id == currentEditingTimeEntryId); o && (o.logged_by = e, o.logged_by_email = user, o.date_worked = t, o.hours = r, o.notes = n, testMode ? saveData() : db && await db.from('ssa_time_entries').update(o).eq('id', o.id).catch(e => alert('Error: ' + e.message)), currentEditingTimeEntryId = null); } else { const o = { id: Date.now(), project_id: parseInt(currentProjectId), date_worked: t, hours: r, notes: n, logged_by: e, logged_by_email: user }; testMode ? (timeEntries.push(o), saveData()) : db && await db.from('ssa_time_entries').insert([o]).then(() => loadData()).catch(e => alert('Error: ' + e.message)); } closeModal('timeEntryModal'); } else alert('Fill in required fields (Name, Date, Hours)'); }
-    function exportAllCSV() { const e = XLSX.utils.book_new(), t = [['Project', 'Status', 'Creator', 'Date', 'Due Date', 'Hours']]; let r = 0; projects.forEach(e => { const n = timeEntries.filter(t => t.project_id == e.id).reduce((e, t) => e + t.hours, 0); r += n, t.push([e.name, e.status, e.creator_name || e.created_by, e.project_date || 'N/A', e.due_date || '-', n.toFixed(1)]); }), t.push(['TOTAL HOURS', '', '', '', '', r.toFixed(1)]); const n = XLSX.utils.aoa_to_sheet(t); n['!cols'] = [{wch: 20}, {wch: 15}, {wch: 25}, {wch: 12}, {wch: 12}, {wch: 10}], ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach(e => { n[e].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'}, n[e].font = {bold: true, color: {rgb: 'FFFFFFFF'}}; }); const o = t.length; ['A' + o, 'B' + o, 'C' + o, 'D' + o, 'E' + o, 'F' + o].forEach(e => { n[e].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'}, n[e].font = {bold: true, color: {rgb: 'FFFFFFFF'}}; }), XLSX.utils.book_append_sheet(e, n, 'Projects'), XLSX.writeFile(e, 'projects.xlsx'); }
-    function exportProjectXLS(e) { const t = projects.find(t => t.id == e); if (t) { const r = timeEntries.filter(e => e.project_id == e), n = {}; r.forEach(e => { const o = `${e.logged_by || 'Unknown'}|${e.date_worked}`; n[o] || (n[o] = { date: e.date_worked, logged_by: e.logged_by || 'Unknown', hours: 0, notes: e.notes || '' }), n[o].hours += e.hours, e.notes && !n[o].notes.includes(e.notes) && (n[o].notes += (n[o].notes ? '; ' : '') + e.notes); }); const o = Object.values(n).sort((e, t) => new Date(e.date) - new Date(t.date)), a = XLSX.utils.book_new(), c = [['Project Details', '', '', ''], ['Project Name', t.name, '', ''], ['Status', t.status, '', ''], ['Creator', t.created_by, '', ''], ['Date Started', t.project_date || 'N/A', '', ''], ['Due Date', t.due_date || 'N/A', '', ''], ['Collaborators', t.collaborators || 'None', '', ''], ['', '', '', ''], ['Date Logged', 'Hours', 'Logged By', 'Notes']]; let l = 0; o.forEach(e => { c.push([e.date, e.hours.toFixed(2), e.logged_by, e.notes]), l += e.hours; }), c.push(['Total Hours', l.toFixed(2), '', '']); const i = XLSX.utils.aoa_to_sheet(c); i['!cols'] = [{wch: 18}, {wch: 12}, {wch: 20}, {wch: 40}], ['A1', 'B1'].forEach(e => { i[e].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'}, i[e].font = {bold: true, color: {rgb: 'FFFFFFFF'}}; }), ['A9', 'B9', 'C9', 'D9'].forEach(e => { i[e].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'}, i[e].font = {bold: true, color: {rgb: 'FFFFFFFF'}}; }); const s = c.length; ['A' + s, 'B' + s].forEach(e => { i[e].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'}, i[e].font = {bold: true, color: {rgb: 'FFFFFFFF'}}; }), XLSX.utils.book_append_sheet(a, i, 'Time Log'), XLSX.writeFile(a, `${t.name}.xlsx`); } }
-    function switchTab(e) { document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')), document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')), document.getElementById(e).classList.add('active'), event.target.classList.add('active'); }
-    function openModal(e) { document.getElementById(e).classList.add('show'); }
-    function closeModal(e) { document.getElementById(e).classList.remove('show'); }
-    function init() { const e = localStorage.getItem('sbConfig'); e && ({ url: url, key: key } = JSON.parse(e), db = window.supabase.createClient(url, key)); const t = localStorage.getItem('user'), r = localStorage.getItem('testMode'); r ? (testMode = true, user = 'test@test.com', isAdmin = true, loadData(), showApp()) : t && (user = t, isAdmin = adminEmails.includes(user.toLowerCase()), loadData(), showApp()); }
+    const adminEmails = [
+      'c.delossantos@elsevier.com',
+      'kelly.lamkins@elsevier.com',
+      'y.mejala@elsevier.com'
+    ];
+
+    function connectSupabase() {
+      const url = document.getElementById('projectUrl').value.trim();
+      const key = document.getElementById('anonKey').value.trim();
+      if (!url || !key) {
+        document.getElementById('connMsg').textContent = 'Enter URL and key';
+        document.getElementById('connMsg').style.color = '#dc3545';
+        return;
+      }
+      db = window.supabase.createClient(url, key);
+      localStorage.setItem('sbConfig', JSON.stringify({ url, key }));
+      document.getElementById('connMsg').textContent = 'Connected! Now login.';
+      document.getElementById('connMsg').style.color = '#28a745';
+    }
+
+    function validateEmail(email) {
+      return email.toLowerCase().endsWith('@elsevier.com');
+    }
+
+    function login() {
+      const email = document.getElementById('email').value.trim();
+      const errorDiv = document.getElementById('emailError');
+
+      if (!email) {
+        errorDiv.textContent = 'Enter your email';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        errorDiv.textContent = 'Only @elsevier.com emails are allowed';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      errorDiv.style.display = 'none';
+
+      if (!db) {
+        alert('Connect to Supabase first');
+        return;
+      }
+
+      user = email;
+      isAdmin = adminEmails.includes(email.toLowerCase());
+      localStorage.setItem('user', user);
+      loadData();
+      showApp();
+    }
+
+    function enterTestMode() {
+      testMode = true;
+      user = 'test@test.com';
+      isAdmin = true;
+      localStorage.setItem('testMode', 'true');
+      loadData();
+      showApp();
+    }
+
+    function showApp() {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appScreen').classList.add('active');
+      document.getElementById('userDisplay').textContent = user;
+      if (isAdmin) {
+        document.getElementById('adminBadge').style.display = 'inline';
+      }
+      setupRealtime();
+    }
+
+    function logout() {
+      user = null;
+      isAdmin = false;
+      testMode = false;
+      localStorage.removeItem('user');
+      localStorage.removeItem('testMode');
+      if (subscription) subscription.unsubscribe();
+      location.reload();
+    }
+
+    async function loadData() {
+      if (testMode) {
+        projects = JSON.parse(localStorage.getItem('projects') || '[]');
+        timeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
+      } else if (db) {
+        try {
+          const { data: p } = await db.from('ssa_projects').select('*');
+          const { data: t } = await db.from('ssa_time_entries').select('*');
+          projects = p || [];
+          timeEntries = t || [];
+        } catch (err) {
+          console.error('Error loading data:', err);
+        }
+      }
+      render();
+    }
+
+    function saveData() {
+      if (testMode) {
+        localStorage.setItem('projects', JSON.stringify(projects));
+        localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+      }
+      render();
+    }
+
+    function setupRealtime() {
+      if (testMode) {
+        document.getElementById('liveDot').classList.add('active');
+        document.getElementById('liveText').textContent = 'Test Mode';
+        window.addEventListener('storage', () => loadData());
+        return;
+      }
+      if (!db) return;
+      if (subscription) subscription.unsubscribe();
+      subscription = db.channel('changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_projects' }, () => loadData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ssa_time_entries' }, () => loadData())
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            document.getElementById('liveDot').classList.add('active');
+            document.getElementById('liveText').textContent = 'Live updates on';
+          }
+        });
+    }
+
+    function render() {
+      renderProjects();
+      renderOverview();
+    }
+
+    function renderProjects() {
+      const list = document.getElementById('projectsList');
+      if (!projects.length) {
+        list.innerHTML = '<div class="empty" style="grid-column: 1/-1;">No projects yet</div>';
+        return;
+      }
+      list.innerHTML = projects.map(p => {
+        const entries = timeEntries.filter(t => t.project_id === p.id);
+        const totalHours = entries.reduce((s, t) => s + t.hours, 0);
+        return `
+          <div class="project-card">
+            <h3>${p.name}</h3>
+            <div class="meta">Status: ${p.status}</div>
+            <div class="meta">Creator: ${p.creator_name || p.created_by}</div>
+            <div class="meta">Date: ${p.project_date || 'N/A'}</div>
+            ${p.due_date ? `<div class="meta">Due: ${p.due_date}</div>` : ''}
+            <div class="meta">Total Hours: ${totalHours.toFixed(1)}h</div>
+            ${p.collaborators ? `<div class="meta">Team: ${p.collaborators}</div>` : ''}
+            <div class="actions">
+              <button onclick="openTimeEntry('${p.id}')">⏱️ Log Time</button>
+              <button class="secondary" onclick="openEditProject('${p.id}')">✏️ Edit</button>
+              <button class="secondary" onclick="exportProjectXLS('${p.id}')">📥 Export</button>
+              ${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">🗑️ Delete</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderOverview() {
+      const list = document.getElementById('overviewList');
+      if (!projects.length) {
+        list.innerHTML = '<div class="empty">No projects yet</div>';
+        return;
+      }
+      let html = '<table><thead><tr><th>Project</th><th>Status</th><th>Creator</th><th>Date</th><th>Due Date</th><th>Hours</th><th>Actions</th></tr></thead><tbody>';
+      let totalHoursAll = 0;
+      projects.forEach(p => {
+        const hours = timeEntries.filter(t => t.project_id === p.id).reduce((s, t) => s + t.hours, 0);
+        totalHoursAll += hours;
+        html += `<tr>
+          <td>${p.name}</td>
+          <td>${p.status}</td>
+          <td>${p.creator_name || p.created_by}</td>
+          <td>${p.project_date || 'N/A'}</td>
+          <td>${p.due_date || '-'}</td>
+          <td>${hours.toFixed(1)}h</td>
+          <td class="actions">
+            <button onclick="openTimeEntry('${p.id}')">Log</button>
+            <button class="secondary" onclick="openEditProject('${p.id}')">Edit</button>
+            <button class="secondary" onclick="exportProjectXLS('${p.id}')">Export</button>
+            ${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">Delete</button>` : ''}
+          </td>
+        </tr>`;
+      });
+      html += `<tr style="background: #667eea; color: white; font-weight: bold;">
+        <td colspan="5">TOTAL HOURS</td>
+        <td>${totalHoursAll.toFixed(1)}h</td>
+        <td></td>
+      </tr>`;
+      html += '</tbody></table>';
+      list.innerHTML = html;
+    }
+
+    function openCreateProjectModal() {
+      document.getElementById('newProjName').value = '';
+      document.getElementById('newProjCreatorName').value = '';
+      document.getElementById('newProjDate').valueAsDate = new Date();
+      document.getElementById('newProjDueDate').value = '';
+      document.getElementById('newProjStatus').value = 'Planned';
+      document.getElementById('newProjCollaborators').value = '';
+      openModal('newProjectModal');
+    }
+
+    async function addProject() {
+      const name = document.getElementById('newProjName').value.trim();
+      const creator_name = document.getElementById('newProjCreatorName').value.trim();
+      const project_date = document.getElementById('newProjDate').value;
+      const due_date = document.getElementById('newProjDueDate').value || null;
+      const status = document.getElementById('newProjStatus').value;
+      const collaborators = document.getElementById('newProjCollaborators').value.trim() || null;
+      if (!name || !creator_name || !project_date) {
+        alert('Fill in required fields');
+        return;
+      }
+      const newProj = { id: Date.now(), name, status, created_by: user, creator_name, project_date, due_date, collaborators };
+      projects.push(newProj);
+      if (testMode) {
+        saveData();
+        closeModal('newProjectModal');
+      } else if (db) {
+        try {
+          const { error } = await db.from('ssa_projects').insert([newProj]);
+          if (error) {
+            alert('Error saving: ' + error.message);
+            projects.pop();
+            return;
+          }
+          closeModal('newProjectModal');
+        } catch (err) {
+          alert('Error: ' + err.message);
+          projects.pop();
+        }
+      }
+    }
+
+    function openEditProject(id) {
+      const proj = projects.find(p => p.id == id);
+      if (!proj) return;
+      if (!canAccessProject(id)) {
+        alert('Only the project creator, collaborators, or admins can edit this project');
+        return;
+      }
+      currentProjectId = id;
+      document.getElementById('editProjName').value = proj.name;
+      document.getElementById('editProjStatus').value = proj.status;
+      document.getElementById('editProjCreator').value = proj.created_by;
+      document.getElementById('editProjDate').value = proj.project_date || '';
+      document.getElementById('editProjDueDate').value = proj.due_date || '';
+      document.getElementById('editProjCollaborators').value = proj.collaborators || '';
+      document.getElementById('deleteBtn').style.display = isAdmin ? 'block' : 'none';
+      openModal('editProjectModal');
+    }
+
+    async function saveProject() {
+      const proj = projects.find(p => p.id == currentProjectId);
+      if (!proj) return;
+      proj.name = document.getElementById('editProjName').value;
+      proj.status = document.getElementById('editProjStatus').value;
+      proj.project_date = document.getElementById('editProjDate').value || null;
+      proj.due_date = document.getElementById('editProjDueDate').value || null;
+      proj.collaborators = document.getElementById('editProjCollaborators').value;
+      if (testMode) {
+        saveData();
+      } else if (db) {
+        try {
+          await db.from('ssa_projects').update(proj).eq('id', proj.id);
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+      closeModal('editProjectModal');
+    }
+
+    function deleteProject() {
+      if (!isAdmin) {
+        alert('No permission');
+        return;
+      }
+      if (!confirm('Delete project and all time entries?')) return;
+      deleteProjectDirect(currentProjectId);
+      closeModal('editProjectModal');
+    }
+
+    async function deleteProjectDirect(id) {
+      if (!isAdmin) {
+        alert('No permission');
+        return;
+      }
+      if (!confirm('Delete?')) return;
+      projects = projects.filter(p => p.id != id);
+      timeEntries = timeEntries.filter(t => t.project_id != id);
+      if (testMode) {
+        saveData();
+      } else if (db) {
+        try {
+          await db.from('ssa_time_entries').delete().eq('project_id', id);
+          await db.from('ssa_projects').delete().eq('id', id);
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+    }
+
+    function canAccessProject(projectId) {
+      const proj = projects.find(p => p.id == projectId);
+      if (!proj) return false;
+      if (isAdmin) return true;
+      if (proj.created_by === user) return true;
+      if (proj.collaborators) {
+        const collabs = proj.collaborators.split(',').map(e => e.trim().toLowerCase());
+        if (collabs.includes(user.toLowerCase())) return true;
+      }
+      return false;
+    }
+
+    function openTimeEntry(id) {
+      if (!canAccessProject(id)) {
+        alert('Only the project creator, collaborators, or admins can log time on this project');
+        return;
+      }
+      currentProjectId = id;
+      currentEditingTimeEntryId = null;
+      document.getElementById('timeEntryModalHeader').textContent = 'Log Time';
+      document.getElementById('loggerName').value = '';
+      document.getElementById('logDate').valueAsDate = new Date();
+      document.getElementById('logHours').value = '';
+      document.getElementById('logNotes').value = '';
+      document.getElementById('timeEntryDeleteBtn').style.display = 'none';
+
+      const entries = timeEntries.filter(t => t.project_id == id);
+      if (entries.length) {
+        document.getElementById('timeLogDisplay').style.display = 'block';
+        document.getElementById('timeLogList').innerHTML = entries.map(e =>
+          `<div class="time-entry">
+            <div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div>
+            <div class="time-entry-actions">
+              <button onclick="editTimeEntry('${e.id}')">Edit</button>
+              <button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button>
+            </div>
+          </div>`
+        ).join('');
+      } else {
+        document.getElementById('timeLogDisplay').style.display = 'none';
+      }
+      openModal('timeEntryModal');
+    }
+
+    function editTimeEntry(id) {
+      const entry = timeEntries.find(e => e.id == id);
+      if (!entry) return;
+      const emailMatches = entry.logged_by_email && entry.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase();
+      const hasNoEmail = !entry.logged_by_email;
+      console.log('Edit check:', { isAdmin, emailMatches, hasNoEmail, entryEmail: entry.logged_by_email, user, entryId: entry.id });
+      if (!isAdmin && !emailMatches && !hasNoEmail) {
+        alert('Only the person who logged this entry or admins can edit it');
+        return;
+      }
+      currentEditingTimeEntryId = id;
+      document.getElementById('timeEntryModalHeader').textContent = 'Edit Time Entry';
+      document.getElementById('loggerName').value = entry.logged_by || '';
+      document.getElementById('logDate').value = entry.date_worked || '';
+      document.getElementById('logHours').value = entry.hours || '';
+      document.getElementById('logNotes').value = entry.notes || '';
+      document.getElementById('timeEntryDeleteBtn').style.display = 'block';
+    }
+
+    async function removeTimeEntry(id) {
+      id = parseInt(id);
+      const entry = timeEntries.find(e => e.id == id);
+      if (!entry) return;
+      const emailMatches = entry.logged_by_email && entry.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase();
+      const hasNoEmail = !entry.logged_by_email;
+      console.log('Delete check:', { isAdmin, emailMatches, hasNoEmail, entryEmail: entry.logged_by_email, user, entryId: entry.id });
+      if (!isAdmin && !emailMatches && !hasNoEmail) {
+        alert('Only the person who logged this entry or admins can delete it');
+        return;
+      }
+      if (!confirm('Delete this time entry?')) return;
+
+      try {
+        console.log('Deleting entry', id, 'testMode:', testMode, 'db:', !!db);
+        if (testMode) {
+          console.log('Before filter:', timeEntries.length);
+          timeEntries = timeEntries.filter(e => e.id != id);
+          console.log('After filter:', timeEntries.length);
+          saveData();
+        } else if (db) {
+          await db.from('ssa_time_entries').delete().eq('id', id);
+          await loadData();
+        } else {
+          alert('ERROR: No testMode or db connection!');
+          return;
+        }
+        const entries = timeEntries.filter(t => t.project_id == currentProjectId);
+        console.log('Entries for project:', entries.length);
+        if (entries.length) {
+          document.getElementById('timeLogDisplay').style.display = 'block';
+          document.getElementById('timeLogList').innerHTML = entries.map(e =>
+            `<div class="time-entry">
+              <div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div>
+              <div class="time-entry-actions">
+                <button onclick="editTimeEntry('${e.id}')">Edit</button>
+                <button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button>
+              </div>
+            </div>`
+          ).join('');
+        } else {
+          document.getElementById('timeLogDisplay').style.display = 'none';
+        }
+        console.log('Delete complete');
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Error deleting: ' + err.message);
+      }
+    }
+
+    function deleteCurrentTimeEntry() {
+      if (!currentEditingTimeEntryId) return;
+      removeTimeEntry(currentEditingTimeEntryId);
+    }
+
+    async function logTime() {
+      const loggerName = document.getElementById('loggerName').value.trim();
+      const date = document.getElementById('logDate').value;
+      const hours = parseFloat(document.getElementById('logHours').value);
+      const notes = document.getElementById('logNotes').value;
+
+      if (!loggerName || !date || !hours) {
+        alert('Fill in required fields (Name, Date, Hours)');
+        return;
+      }
+
+      if (currentEditingTimeEntryId) {
+        const entry = timeEntries.find(e => e.id == currentEditingTimeEntryId);
+        if (!entry) return;
+        entry.logged_by = loggerName;
+        entry.logged_by_email = user;
+        entry.date_worked = date;
+        entry.hours = hours;
+        entry.notes = notes;
+
+        if (testMode) {
+          saveData();
+        } else if (db) {
+          try {
+            await db.from('ssa_time_entries').update(entry).eq('id', entry.id);
+            await loadData();
+          } catch (err) {
+            alert('Error: ' + err.message);
+          }
+        }
+        currentEditingTimeEntryId = null;
+      } else {
+        const newEntry = { id: Date.now(), project_id: parseInt(currentProjectId), date_worked: date, hours, notes, logged_by: loggerName, logged_by_email: user };
+
+        if (testMode) {
+          timeEntries.push(newEntry);
+          saveData();
+        } else if (db) {
+          try {
+            await db.from('ssa_time_entries').insert([newEntry]);
+            await loadData();
+          } catch (err) {
+            alert('Error: ' + err.message);
+          }
+        }
+      }
+      closeModal('timeEntryModal');
+    }
+
+    function exportAllCSV() {
+      const wb = XLSX.utils.book_new();
+      const data = [['Project', 'Status', 'Creator', 'Date', 'Due Date', 'Hours']];
+      let totalHoursAll = 0;
+      projects.forEach(p => {
+        const hours = timeEntries.filter(t => t.project_id == p.id).reduce((s, t) => s + t.hours, 0);
+        totalHoursAll += hours;
+        data.push([p.name, p.status, p.creator_name || p.created_by, p.project_date || 'N/A', p.due_date || '-', hours.toFixed(1)]);
+      });
+      data.push(['TOTAL HOURS', '', '', '', '', totalHoursAll.toFixed(1)]);
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 25}, {wch: 12}, {wch: 12}, {wch: 10}];
+
+      ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach(cell => {
+        ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
+        ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
+      });
+
+      const totalRow = data.length;
+      const totalCells = ['A' + totalRow, 'B' + totalRow, 'C' + totalRow, 'D' + totalRow, 'E' + totalRow, 'F' + totalRow];
+      totalCells.forEach(cell => {
+        ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
+        ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
+      });
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Projects');
+      XLSX.writeFile(wb, 'projects.xlsx');
+    }
+
+    function exportProjectXLS(projectId) {
+      const proj = projects.find(p => p.id == projectId);
+      if (!proj) return;
+      const entries = timeEntries.filter(t => t.project_id == projectId);
+
+      const consolidated = {};
+      entries.forEach(e => {
+        const key = `${e.logged_by || 'Unknown'}|${e.date_worked}`;
+        if (!consolidated[key]) {
+          consolidated[key] = { date: e.date_worked, logged_by: e.logged_by || 'Unknown', hours: 0, notes: e.notes || '' };
+        }
+        consolidated[key].hours += e.hours;
+        if (e.notes && !consolidated[key].notes.includes(e.notes)) {
+          consolidated[key].notes += (consolidated[key].notes ? '; ' : '') + e.notes;
+        }
+      });
+
+      const sorted = Object.values(consolidated).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const wb = XLSX.utils.book_new();
+      const data = [
+        ['Project Details', '', '', ''],
+        ['Project Name', proj.name, '', ''],
+        ['Status', proj.status, '', ''],
+        ['Creator', proj.created_by, '', ''],
+        ['Date Started', proj.project_date || 'N/A', '', ''],
+        ['Due Date', proj.due_date || 'N/A', '', ''],
+        ['Collaborators', proj.collaborators || 'None', '', ''],
+        ['', '', '', ''],
+        ['Date Logged', 'Hours', 'Logged By', 'Notes']
+      ];
+
+      let totalHours = 0;
+      sorted.forEach(e => {
+        data.push([e.date, e.hours.toFixed(2), e.logged_by, e.notes]);
+        totalHours += e.hours;
+      });
+
+      data.push(['Total Hours', totalHours.toFixed(2), '', '']);
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = [{wch: 18}, {wch: 12}, {wch: 20}, {wch: 40}];
+
+      ['A1', 'B1'].forEach(cell => {
+        ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
+        ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
+      });
+
+      ['A9', 'B9', 'C9', 'D9'].forEach(cell => {
+        ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
+        ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
+      });
+
+      const totalRow = data.length;
+      ['A' + totalRow, 'B' + totalRow].forEach(cell => {
+        ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
+        ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
+      });
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Time Log');
+      XLSX.writeFile(wb, `${proj.name}.xlsx`);
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('show');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+
+    function init() {
+      const saved = localStorage.getItem('sbConfig');
+      if (saved) {
+        const { url, key } = JSON.parse(saved);
+        db = window.supabase.createClient(url, key);
+      }
+      const savedUser = localStorage.getItem('user');
+      const savedTestMode = localStorage.getItem('testMode');
+      if (savedTestMode) {
+        testMode = true;
+        user = 'test@test.com';
+        isAdmin = true;
+        loadData();
+        showApp();
+      } else if (savedUser) {
+        user = savedUser;
+        isAdmin = adminEmails.includes(user.toLowerCase());
+        loadData();
+        showApp();
+      }
+    }
+
     init();
   </script>
 </body>
