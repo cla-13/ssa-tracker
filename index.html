@@ -629,7 +629,9 @@
     function editTimeEntry(id) {
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
-      if (!isAdmin && entry.logged_by_email !== user && entry.logged_by !== user) {
+      const emailMatches = entry.logged_by_email && entry.logged_by_email.toLowerCase() === user.toLowerCase();
+      const nameMatches = entry.logged_by && entry.logged_by.toLowerCase() === user.toLowerCase();
+      if (!isAdmin && !emailMatches && !nameMatches) {
         alert('Only the person who logged this entry or admins can edit it');
         return;
       }
@@ -646,7 +648,9 @@
       id = parseInt(id);
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
-      if (!isAdmin && entry.logged_by_email !== user && entry.logged_by !== user) {
+      const emailMatches = entry.logged_by_email && entry.logged_by_email.toLowerCase() === user.toLowerCase();
+      const nameMatches = entry.logged_by && entry.logged_by.toLowerCase() === user.toLowerCase();
+      if (!isAdmin && !emailMatches && !nameMatches) {
         alert('Only the person who logged this entry or admins can delete it');
         return;
       }
