@@ -629,7 +629,7 @@
     function editTimeEntry(id) {
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
-      if (!isAdmin && entry.logged_by !== user) {
+      if (!isAdmin && entry.logged_by_email !== user && entry.logged_by !== user) {
         alert('Only the person who logged this entry or admins can edit it');
         return;
       }
@@ -646,7 +646,7 @@
       id = parseInt(id);
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
-      if (!isAdmin && entry.logged_by !== user) {
+      if (!isAdmin && entry.logged_by_email !== user && entry.logged_by !== user) {
         alert('Only the person who logged this entry or admins can delete it');
         return;
       }
@@ -711,6 +711,7 @@
         const entry = timeEntries.find(e => e.id == currentEditingTimeEntryId);
         if (!entry) return;
         entry.logged_by = loggerName;
+        entry.logged_by_email = user;
         entry.date_worked = date;
         entry.hours = hours;
         entry.notes = notes;
@@ -727,7 +728,7 @@
         currentEditingTimeEntryId = null;
       } else {
         // Add new mode - always create separate entry
-        timeEntries.push({ id: Date.now(), project_id: currentProjectId, date_worked: date, hours, notes, logged_by: loggerName });
+        timeEntries.push({ id: Date.now(), project_id: currentProjectId, date_worked: date, hours, notes, logged_by: loggerName, logged_by_email: user });
 
         if (testMode) {
           saveData();
