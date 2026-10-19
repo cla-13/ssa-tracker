@@ -274,7 +274,6 @@
     let subscription = null;
     let testMode = false;
 
-    // Three admins with unrestricted access
     const adminEmails = [
       'c.delossantos@elsevier.com',
       'kelly.lamkins@elsevier.com',
@@ -630,8 +629,9 @@
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
       const emailMatches = entry.logged_by_email && entry.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase();
-      console.log('Edit check:', { isAdmin, emailMatches, entryEmail: entry.logged_by_email, user, entryId: entry.id });
-      if (!isAdmin && !emailMatches) {
+      const hasNoEmail = !entry.logged_by_email;
+      console.log('Edit check:', { isAdmin, emailMatches, hasNoEmail, entryEmail: entry.logged_by_email, user, entryId: entry.id });
+      if (!isAdmin && !emailMatches && !hasNoEmail) {
         alert('Only the person who logged this entry or admins can edit it');
         return;
       }
@@ -649,8 +649,9 @@
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
       const emailMatches = entry.logged_by_email && entry.logged_by_email.trim().toLowerCase() === user.trim().toLowerCase();
-      console.log('Delete check:', { isAdmin, emailMatches, entryEmail: entry.logged_by_email, user, entryId: entry.id });
-      if (!isAdmin && !emailMatches) {
+      const hasNoEmail = !entry.logged_by_email;
+      console.log('Delete check:', { isAdmin, emailMatches, hasNoEmail, entryEmail: entry.logged_by_email, user, entryId: entry.id });
+      if (!isAdmin && !emailMatches && !hasNoEmail) {
         alert('Only the person who logged this entry or admins can delete it');
         return;
       }
@@ -670,7 +671,6 @@
           alert('ERROR: No testMode or db connection!');
           return;
         }
-        // Refresh the time entry list in the modal
         const entries = timeEntries.filter(t => t.project_id == currentProjectId);
         console.log('Entries for project:', entries.length);
         if (entries.length) {
@@ -711,7 +711,6 @@
       }
 
       if (currentEditingTimeEntryId) {
-        // Edit mode
         const entry = timeEntries.find(e => e.id == currentEditingTimeEntryId);
         if (!entry) return;
         entry.logged_by = loggerName;
@@ -731,7 +730,6 @@
         }
         currentEditingTimeEntryId = null;
       } else {
-        // Add new mode - always create separate entry
         timeEntries.push({ id: Date.now(), project_id: currentProjectId, date_worked: date, hours, notes, logged_by: loggerName, logged_by_email: user });
 
         if (testMode) {
@@ -782,7 +780,6 @@
       if (!proj) return;
       const entries = timeEntries.filter(t => t.project_id == projectId);
 
-      // Consolidate entries by (logged_by + date_worked)
       const consolidated = {};
       entries.forEach(e => {
         const key = `${e.logged_by || 'Unknown'}|${e.date_worked}`;
