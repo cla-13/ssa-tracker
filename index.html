@@ -274,11 +274,7 @@
     let subscription = null;
     let testMode = false;
 
-    const adminEmails = [
-      'c.delossantos@elsevier.com',
-      'kelly.lamkins@elsevier.com',
-      'y.mejala@elsevier.com'
-    ];
+    const adminEmails = ['c.delossantos@elsevier.com', 'kelly.lamkins@elsevier.com', 'y.mejala@elsevier.com'];
 
     function connectSupabase() {
       const url = document.getElementById('projectUrl').value.trim();
@@ -301,26 +297,21 @@
     function login() {
       const email = document.getElementById('email').value.trim();
       const errorDiv = document.getElementById('emailError');
-
       if (!email) {
         errorDiv.textContent = 'Enter your email';
         errorDiv.style.display = 'block';
         return;
       }
-
       if (!validateEmail(email)) {
         errorDiv.textContent = 'Only @elsevier.com emails are allowed';
         errorDiv.style.display = 'block';
         return;
       }
-
       errorDiv.style.display = 'none';
-
       if (!db) {
         alert('Connect to Supabase first');
         return;
       }
-
       user = email;
       isAdmin = adminEmails.includes(email.toLowerCase());
       localStorage.setItem('user', user);
@@ -416,23 +407,7 @@
       list.innerHTML = projects.map(p => {
         const entries = timeEntries.filter(t => t.project_id === p.id);
         const totalHours = entries.reduce((s, t) => s + t.hours, 0);
-        return `
-          <div class="project-card">
-            <h3>${p.name}</h3>
-            <div class="meta">Status: ${p.status}</div>
-            <div class="meta">Creator: ${p.creator_name || p.created_by}</div>
-            <div class="meta">Date: ${p.project_date || 'N/A'}</div>
-            ${p.due_date ? `<div class="meta">Due: ${p.due_date}</div>` : ''}
-            <div class="meta">Total Hours: ${totalHours.toFixed(1)}h</div>
-            ${p.collaborators ? `<div class="meta">Team: ${p.collaborators}</div>` : ''}
-            <div class="actions">
-              <button onclick="openTimeEntry('${p.id}')">⏱️ Log Time</button>
-              <button class="secondary" onclick="openEditProject('${p.id}')">✏️ Edit</button>
-              <button class="secondary" onclick="exportProjectXLS('${p.id}')">📥 Export</button>
-              ${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">🗑️ Delete</button>` : ''}
-            </div>
-          </div>
-        `;
+        return `<div class="project-card"><h3>${p.name}</h3><div class="meta">Status: ${p.status}</div><div class="meta">Creator: ${p.creator_name || p.created_by}</div><div class="meta">Date: ${p.project_date || 'N/A'}</div>${p.due_date ? `<div class="meta">Due: ${p.due_date}</div>` : ''}<div class="meta">Total Hours: ${totalHours.toFixed(1)}h</div>${p.collaborators ? `<div class="meta">Team: ${p.collaborators}</div>` : ''}<div class="actions"><button onclick="openTimeEntry('${p.id}')">⏱️ Log Time</button><button class="secondary" onclick="openEditProject('${p.id}')">✏️ Edit</button><button class="secondary" onclick="exportProjectXLS('${p.id}')">📥 Export</button>${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">🗑️ Delete</button>` : ''}</div></div>`;
       }).join('');
     }
 
@@ -447,27 +422,9 @@
       projects.forEach(p => {
         const hours = timeEntries.filter(t => t.project_id === p.id).reduce((s, t) => s + t.hours, 0);
         totalHoursAll += hours;
-        html += `<tr>
-          <td>${p.name}</td>
-          <td>${p.status}</td>
-          <td>${p.creator_name || p.created_by}</td>
-          <td>${p.project_date || 'N/A'}</td>
-          <td>${p.due_date || '-'}</td>
-          <td>${hours.toFixed(1)}h</td>
-          <td class="actions">
-            <button onclick="openTimeEntry('${p.id}')">Log</button>
-            <button class="secondary" onclick="openEditProject('${p.id}')">Edit</button>
-            <button class="secondary" onclick="exportProjectXLS('${p.id}')">Export</button>
-            ${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">Delete</button>` : ''}
-          </td>
-        </tr>`;
+        html += `<tr><td>${p.name}</td><td>${p.status}</td><td>${p.creator_name || p.created_by}</td><td>${p.project_date || 'N/A'}</td><td>${p.due_date || '-'}</td><td>${hours.toFixed(1)}h</td><td class="actions"><button onclick="openTimeEntry('${p.id}')">Log</button><button class="secondary" onclick="openEditProject('${p.id}')">Edit</button><button class="secondary" onclick="exportProjectXLS('${p.id}')">Export</button>${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">Delete</button>` : ''}</td></tr>`;
       });
-      html += `<tr style="background: #667eea; color: white; font-weight: bold;">
-        <td colspan="5">TOTAL HOURS</td>
-        <td>${totalHoursAll.toFixed(1)}h</td>
-        <td></td>
-      </tr>`;
-      html += '</tbody></table>';
+      html += `<tr style="background: #667eea; color: white; font-weight: bold;"><td colspan="5">TOTAL HOURS</td><td>${totalHoursAll.toFixed(1)}h</td><td></td></tr></tbody></table>`;
       list.innerHTML = html;
     }
 
@@ -606,19 +563,10 @@
       document.getElementById('logHours').value = '';
       document.getElementById('logNotes').value = '';
       document.getElementById('timeEntryDeleteBtn').style.display = 'none';
-
       const entries = timeEntries.filter(t => t.project_id == id);
       if (entries.length) {
         document.getElementById('timeLogDisplay').style.display = 'block';
-        document.getElementById('timeLogList').innerHTML = entries.map(e =>
-          `<div class="time-entry">
-            <div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div>
-            <div class="time-entry-actions">
-              <button onclick="editTimeEntry('${e.id}')">Edit</button>
-              <button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button>
-            </div>
-          </div>`
-        ).join('');
+        document.getElementById('timeLogList').innerHTML = entries.map(e => `<div class="time-entry"><div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div><div class="time-entry-actions"><button onclick="editTimeEntry('${e.id}')">Edit</button><button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button></div></div>`).join('');
       } else {
         document.getElementById('timeLogDisplay').style.display = 'none';
       }
@@ -656,38 +604,21 @@
         return;
       }
       if (!confirm('Delete this time entry?')) return;
-
       try {
-        console.log('Deleting entry', id, 'testMode:', testMode, 'db:', !!db);
         if (testMode) {
-          console.log('Before filter:', timeEntries.length);
           timeEntries = timeEntries.filter(e => e.id != id);
-          console.log('After filter:', timeEntries.length);
           saveData();
         } else if (db) {
           await db.from('ssa_time_entries').delete().eq('id', id);
           await loadData();
-        } else {
-          alert('ERROR: No testMode or db connection!');
-          return;
         }
         const entries = timeEntries.filter(t => t.project_id == currentProjectId);
-        console.log('Entries for project:', entries.length);
         if (entries.length) {
           document.getElementById('timeLogDisplay').style.display = 'block';
-          document.getElementById('timeLogList').innerHTML = entries.map(e =>
-            `<div class="time-entry">
-              <div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div>
-              <div class="time-entry-actions">
-                <button onclick="editTimeEntry('${e.id}')">Edit</button>
-                <button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button>
-              </div>
-            </div>`
-          ).join('');
+          document.getElementById('timeLogList').innerHTML = entries.map(e => `<div class="time-entry"><div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div><div class="time-entry-actions"><button onclick="editTimeEntry('${e.id}')">Edit</button><button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button></div></div>`).join('');
         } else {
           document.getElementById('timeLogDisplay').style.display = 'none';
         }
-        console.log('Delete complete');
       } catch (err) {
         console.error('Delete error:', err);
         alert('Error deleting: ' + err.message);
@@ -704,12 +635,10 @@
       const date = document.getElementById('logDate').value;
       const hours = parseFloat(document.getElementById('logHours').value);
       const notes = document.getElementById('logNotes').value;
-
       if (!loggerName || !date || !hours) {
         alert('Fill in required fields (Name, Date, Hours)');
         return;
       }
-
       if (currentEditingTimeEntryId) {
         const entry = timeEntries.find(e => e.id == currentEditingTimeEntryId);
         if (!entry) return;
@@ -718,7 +647,6 @@
         entry.date_worked = date;
         entry.hours = hours;
         entry.notes = notes;
-
         if (testMode) {
           saveData();
         } else if (db) {
@@ -730,13 +658,15 @@
         }
         currentEditingTimeEntryId = null;
       } else {
-        timeEntries.push({ id: Date.now(), project_id: currentProjectId, date_worked: date, hours, notes, logged_by: loggerName, logged_by_email: user });
-
+        const newEntry = { project_id: currentProjectId, date_worked: date, hours, notes, logged_by: loggerName, logged_by_email: user };
         if (testMode) {
+          newEntry.id = Date.now();
+          timeEntries.push(newEntry);
           saveData();
         } else if (db) {
           try {
-            await db.from('ssa_time_entries').insert([timeEntries[timeEntries.length - 1]]);
+            await db.from('ssa_time_entries').insert([newEntry]);
+            await loadData();
           } catch (err) {
             alert('Error: ' + err.message);
           }
@@ -755,22 +685,18 @@
         data.push([p.name, p.status, p.creator_name || p.created_by, p.project_date || 'N/A', p.due_date || '-', hours.toFixed(1)]);
       });
       data.push(['TOTAL HOURS', '', '', '', '', totalHoursAll.toFixed(1)]);
-
       const ws = XLSX.utils.aoa_to_sheet(data);
       ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 25}, {wch: 12}, {wch: 12}, {wch: 10}];
-
       ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'].forEach(cell => {
         ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
         ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
       });
-
       const totalRow = data.length;
       const totalCells = ['A' + totalRow, 'B' + totalRow, 'C' + totalRow, 'D' + totalRow, 'E' + totalRow, 'F' + totalRow];
       totalCells.forEach(cell => {
         ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
         ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
       });
-
       XLSX.utils.book_append_sheet(wb, ws, 'Projects');
       XLSX.writeFile(wb, 'projects.xlsx');
     }
@@ -779,7 +705,6 @@
       const proj = projects.find(p => p.id == projectId);
       if (!proj) return;
       const entries = timeEntries.filter(t => t.project_id == projectId);
-
       const consolidated = {};
       entries.forEach(e => {
         const key = `${e.logged_by || 'Unknown'}|${e.date_worked}`;
@@ -791,49 +716,30 @@
           consolidated[key].notes += (consolidated[key].notes ? '; ' : '') + e.notes;
         }
       });
-
       const sorted = Object.values(consolidated).sort((a, b) => new Date(a.date) - new Date(b.date));
-
       const wb = XLSX.utils.book_new();
-      const data = [
-        ['Project Details', '', '', ''],
-        ['Project Name', proj.name, '', ''],
-        ['Status', proj.status, '', ''],
-        ['Creator', proj.created_by, '', ''],
-        ['Date Started', proj.project_date || 'N/A', '', ''],
-        ['Due Date', proj.due_date || 'N/A', '', ''],
-        ['Collaborators', proj.collaborators || 'None', '', ''],
-        ['', '', '', ''],
-        ['Date Logged', 'Hours', 'Logged By', 'Notes']
-      ];
-
+      const data = [['Project Details', '', '', ''], ['Project Name', proj.name, '', ''], ['Status', proj.status, '', ''], ['Creator', proj.created_by, '', ''], ['Date Started', proj.project_date || 'N/A', '', ''], ['Due Date', proj.due_date || 'N/A', '', ''], ['Collaborators', proj.collaborators || 'None', '', ''], ['', '', '', ''], ['Date Logged', 'Hours', 'Logged By', 'Notes']];
       let totalHours = 0;
       sorted.forEach(e => {
         data.push([e.date, e.hours.toFixed(2), e.logged_by, e.notes]);
         totalHours += e.hours;
       });
-
       data.push(['Total Hours', totalHours.toFixed(2), '', '']);
-
       const ws = XLSX.utils.aoa_to_sheet(data);
       ws['!cols'] = [{wch: 18}, {wch: 12}, {wch: 20}, {wch: 40}];
-
       ['A1', 'B1'].forEach(cell => {
         ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
         ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
       });
-
       ['A9', 'B9', 'C9', 'D9'].forEach(cell => {
         ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
         ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
       });
-
       const totalRow = data.length;
       ['A' + totalRow, 'B' + totalRow].forEach(cell => {
         ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
         ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
       });
-
       XLSX.utils.book_append_sheet(wb, ws, 'Time Log');
       XLSX.writeFile(wb, `${proj.name}.xlsx`);
     }
