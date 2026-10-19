@@ -642,7 +642,8 @@
       document.getElementById('timeEntryDeleteBtn').style.display = 'block';
     }
 
-    function removeTimeEntry(id) {
+    async function removeTimeEntry(id) {
+      id = parseInt(id);
       const entry = timeEntries.find(e => e.id == id);
       if (!entry) return;
       if (!isAdmin && entry.logged_by !== user) {
@@ -650,13 +651,43 @@
         return;
       }
       if (!confirm('Delete this time entry?')) return;
-      timeEntries = timeEntries.filter(e => e.id != id);
-      if (testMode) {
-        saveData();
-      } else if (db) {
-        db.from('ssa_time_entries').delete().eq('id', id).catch(err => alert('Error: ' + err.message));
+
+      try {
+        console.log('Deleting entry', id, 'testMode:', testMode, 'db:', !!db);
+        if (testMode) {
+          console.log('Before filter:', timeEntries.length);
+          timeEntries = timeEntries.filter(e => e.id != id);
+          console.log('After filter:', timeEntries.length);
+          saveData();
+        } else if (db) {
+          await db.from('ssa_time_entries').delete().eq('id', id);
+          await loadData();
+        } else {
+          alert('ERROR: No testMode or db connection!');
+          return;
+        }
+        // Refresh the time entry list in the modal
+        const entries = timeEntries.filter(t => t.project_id == currentProjectId);
+        console.log('Entries for project:', entries.length);
+        if (entries.length) {
+          document.getElementById('timeLogDisplay').style.display = 'block';
+          document.getElementById('timeLogList').innerHTML = entries.map(e =>
+            `<div class="time-entry">
+              <div class="time-entry-info">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div>
+              <div class="time-entry-actions">
+                <button onclick="editTimeEntry('${e.id}')">Edit</button>
+                <button class="danger" onclick="removeTimeEntry('${e.id}')">Delete</button>
+              </div>
+            </div>`
+          ).join('');
+        } else {
+          document.getElementById('timeLogDisplay').style.display = 'none';
+        }
+        console.log('Delete complete');
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Error deleting: ' + err.message);
       }
-      openTimeEntry(currentProjectId);
     }
 
     function deleteCurrentTimeEntry() {
