@@ -21,6 +21,7 @@
     button:hover { background: #5568d3; }
     button.test { background: #28a745; margin-top: 20px; }
     button.test:hover { background: #218838; }
+    .error { color: #dc3545; font-size: 12px; margin-top: 5px; }
 
     /* App Screen */
     .app-screen { display: none; }
@@ -28,11 +29,13 @@
 
     header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
     header h1 { color: #667eea; font-size: 24px; }
-    header .controls { display: flex; gap: 10px; }
+    header .controls { display: flex; gap: 10px; align-items: center; }
     header button { width: auto; padding: 8px 16px; margin: 0; }
     .live-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #999; }
     .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #999; }
     .live-dot.active { background: #28a745; }
+    .user-info { font-size: 13px; color: #666; }
+    .admin-badge { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
 
     .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
     .tab-btn { padding: 10px 20px; background: white; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; font-weight: bold; }
@@ -97,7 +100,8 @@
 
     <div class="form-group">
       <label>Email</label>
-      <input type="email" id="email" placeholder="your.email@company.com">
+      <input type="email" id="email" placeholder="your.email@elsevier.com">
+      <div id="emailError" class="error" style="display: none;"></div>
     </div>
     <button onclick="login()">Login</button>
     <button class="test" onclick="enterTestMode()">🧪 Test Mode</button>
@@ -109,6 +113,10 @@
       <header>
         <h1>📊 Project Tracker</h1>
         <div class="controls">
+          <div class="user-info">
+            <span id="userDisplay"></span>
+            <span id="adminBadge" class="admin-badge" style="display: none; margin-left: 8px;">ADMIN</span>
+          </div>
           <div class="live-status">
             <div class="live-dot" id="liveDot"></div>
             <span id="liveText">Connecting...</span>
@@ -171,7 +179,7 @@
       </div>
       <div class="form-group">
         <label>Collaborators (comma separated, optional)</label>
-        <input type="text" id="newProjCollaborators" placeholder="email1@company.com, email2@company.com">
+        <input type="text" id="newProjCollaborators" placeholder="email1@elsevier.com, email2@elsevier.com">
       </div>
       <div class="modal-footer">
         <button class="secondary" onclick="closeModal('newProjectModal')">Cancel</button>
@@ -210,7 +218,7 @@
       </div>
       <div class="form-group">
         <label>Collaborators (comma separated, optional)</label>
-        <input type="text" id="editProjCollaborators" placeholder="email1@company.com, email2@company.com">
+        <input type="text" id="editProjCollaborators" placeholder="email1@elsevier.com, email2@elsevier.com">
       </div>
       <div class="modal-footer">
         <button class="secondary" onclick="closeModal('editProjectModal')">Cancel</button>
@@ -224,6 +232,10 @@
   <div id="timeEntryModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">Log Time</div>
+      <div class="form-group">
+        <label>Your Full Name *</label>
+        <input type="text" id="loggerName" required placeholder="Your name for this entry">
+      </div>
       <div class="form-group">
         <label>Date *</label>
         <input type="date" id="logDate" required>
@@ -250,13 +262,19 @@
   <script>
     let db = null;
     let user = null;
+    let isAdmin = false;
     let currentProjectId = null;
     let projects = [];
     let timeEntries = [];
     let subscription = null;
     let testMode = false;
 
-    const allowedDelete = ['c.delossantos@elsevier.com', 'y.mejala@elsevier.com', 'k.lamkins@elsevier.com', 'test@test.com'];
+    // Three admins with unrestricted access
+    const adminEmails = [
+      'c.delossantos@elsevier.com',
+      'kelly.lamkins@elsevier.com',
+      'y.mejala@elsevier.com'
+    ];
 
     function connectSupabase() {
       const url = document.getElementById('projectUrl').value.trim();
@@ -272,17 +290,35 @@
       document.getElementById('connMsg').style.color = '#28a745';
     }
 
+    function validateEmail(email) {
+      return email.toLowerCase().endsWith('@elsevier.com');
+    }
+
     function login() {
       const email = document.getElementById('email').value.trim();
+      const errorDiv = document.getElementById('emailError');
+      
       if (!email) {
-        alert('Enter your email');
+        errorDiv.textContent = 'Enter your email';
+        errorDiv.style.display = 'block';
         return;
       }
+
+      if (!validateEmail(email)) {
+        errorDiv.textContent = 'Only @elsevier.com emails are allowed';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      errorDiv.style.display = 'none';
+
       if (!db) {
         alert('Connect to Supabase first');
         return;
       }
+
       user = email;
+      isAdmin = adminEmails.includes(email.toLowerCase());
       localStorage.setItem('user', user);
       loadData();
       showApp();
@@ -291,6 +327,7 @@
     function enterTestMode() {
       testMode = true;
       user = 'test@test.com';
+      isAdmin = true;
       localStorage.setItem('testMode', 'true');
       loadData();
       showApp();
@@ -299,11 +336,16 @@
     function showApp() {
       document.getElementById('authScreen').style.display = 'none';
       document.getElementById('appScreen').classList.add('active');
+      document.getElementById('userDisplay').textContent = user;
+      if (isAdmin) {
+        document.getElementById('adminBadge').style.display = 'inline';
+      }
       setupRealtime();
     }
 
     function logout() {
       user = null;
+      isAdmin = false;
       testMode = false;
       localStorage.removeItem('user');
       localStorage.removeItem('testMode');
@@ -383,7 +425,7 @@
               <button onclick="openTimeEntry('${p.id}')">⏱️ Log Time</button>
               <button class="secondary" onclick="openEditProject('${p.id}')">✏️ Edit</button>
               <button class="secondary" onclick="exportProjectXLS('${p.id}')">📥 Export</button>
-              ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">🗑️ Delete</button>` : ''}
+              ${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">🗑️ Delete</button>` : ''}
             </div>
           </div>
         `;
@@ -412,7 +454,7 @@
             <button onclick="openTimeEntry('${p.id}')">Log</button>
             <button class="secondary" onclick="openEditProject('${p.id}')">Edit</button>
             <button class="secondary" onclick="exportProjectXLS('${p.id}')">Export</button>
-            ${allowedDelete.includes(user) ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">Delete</button>` : ''}
+            ${isAdmin ? `<button class="danger" onclick="deleteProjectDirect('${p.id}')">Delete</button>` : ''}
           </td>
         </tr>`;
       });
@@ -477,7 +519,7 @@
       document.getElementById('editProjDate').value = proj.project_date || '';
       document.getElementById('editProjDueDate').value = proj.due_date || '';
       document.getElementById('editProjCollaborators').value = proj.collaborators || '';
-      document.getElementById('deleteBtn').style.display = allowedDelete.includes(user) ? 'block' : 'none';
+      document.getElementById('deleteBtn').style.display = isAdmin ? 'block' : 'none';
       openModal('editProjectModal');
     }
 
@@ -502,7 +544,7 @@
     }
 
     function deleteProject() {
-      if (!allowedDelete.includes(user)) {
+      if (!isAdmin) {
         alert('No permission');
         return;
       }
@@ -512,7 +554,7 @@
     }
 
     async function deleteProjectDirect(id) {
-      if (!allowedDelete.includes(user)) {
+      if (!isAdmin) {
         alert('No permission');
         return;
       }
@@ -533,6 +575,7 @@
 
     function openTimeEntry(id) {
       currentProjectId = id;
+      document.getElementById('loggerName').value = '';
       document.getElementById('logDate').valueAsDate = new Date();
       document.getElementById('logHours').value = '';
       document.getElementById('logNotes').value = '';
@@ -540,7 +583,7 @@
       if (entries.length) {
         document.getElementById('timeLogDisplay').style.display = 'block';
         document.getElementById('timeLogList').innerHTML = entries.map(e =>
-          `<div class="time-entry">${e.date_worked}: ${e.hours}h ${e.notes ? '- ' + e.notes : ''}</div>`
+          `<div class="time-entry">${e.date_worked}: ${e.hours}h - Logged by: ${e.logged_by || 'Unknown'} ${e.notes ? ' | ' + e.notes : ''}</div>`
         ).join('');
       } else {
         document.getElementById('timeLogDisplay').style.display = 'none';
@@ -549,19 +592,21 @@
     }
 
     async function logTime() {
+      const loggerName = document.getElementById('loggerName').value.trim();
       const date = document.getElementById('logDate').value;
       const hours = parseFloat(document.getElementById('logHours').value);
       const notes = document.getElementById('logNotes').value;
-      if (!date || !hours) {
-        alert('Fill required fields');
+      if (!loggerName || !date || !hours) {
+        alert('Fill in required fields (Name, Date, Hours)');
         return;
       }
       const existing = timeEntries.find(t => t.project_id == currentProjectId && t.date_worked === date);
       if (existing) {
         existing.hours += hours;
         existing.notes = (existing.notes ? existing.notes + '; ' : '') + notes;
+        existing.logged_by = loggerName;
       } else {
-        timeEntries.push({ id: Date.now(), project_id: currentProjectId, date_worked: date, hours, notes, logged_by: user });
+        timeEntries.push({ id: Date.now(), project_id: currentProjectId, date_worked: date, hours, notes, logged_by: loggerName });
       }
       if (testMode) {
         saveData();
@@ -627,19 +672,19 @@
         ['Due Date', proj.due_date || 'N/A', '', ''],
         ['Collaborators', proj.collaborators || 'None', '', ''],
         ['', '', '', ''],
-        ['Date Logged', 'Hours', 'Notes', '']
+        ['Date Logged', 'Hours', 'Logged By', 'Notes']
       ];
 
       let totalHours = 0;
       sorted.forEach(e => {
-        data.push([e.date_worked, e.hours, e.notes || '', '']);
+        data.push([e.date_worked, e.hours, e.logged_by || 'Unknown', e.notes || '']);
         totalHours += e.hours;
       });
 
       data.push(['Total Hours', totalHours.toFixed(1), '', '']);
 
       const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{wch: 18}, {wch: 30}, {wch: 40}, {wch: 10}];
+      ws['!cols'] = [{wch: 18}, {wch: 12}, {wch: 20}, {wch: 40}];
 
       // Header formatting for project details
       ['A1', 'B1'].forEach(cell => {
@@ -648,7 +693,7 @@
       });
 
       // Time entries header
-      ['A9', 'B9', 'C9'].forEach(cell => {
+      ['A9', 'B9', 'C9', 'D9'].forEach(cell => {
         ws[cell].fill = {fgColor: {rgb: 'FF667eea'}, patternType: 'solid'};
         ws[cell].font = {bold: true, color: {rgb: 'FFFFFFFF'}};
       });
@@ -690,10 +735,12 @@
       if (savedTestMode) {
         testMode = true;
         user = 'test@test.com';
+        isAdmin = true;
         loadData();
         showApp();
       } else if (savedUser) {
         user = savedUser;
+        isAdmin = adminEmails.includes(user.toLowerCase());
         loadData();
         showApp();
       }
